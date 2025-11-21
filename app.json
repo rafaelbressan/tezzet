@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Tezzet",
+    "slug": "tezzet",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D61FF"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "rio.tezos.tezzet"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0D61FF"
+      },
+      "package": "rio.tezos.tezzet",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Tezzet to access your camera for QR code scanning."
+        }
+      ],
+      "expo-local-authentication"
+    ]
+  }
+}
