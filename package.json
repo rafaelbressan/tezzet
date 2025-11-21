@@ -1,12 +1,15 @@
 {
-  "name": "tezzet-new",
-  "version": "1.0.0",
+  "name": "tezzet",
+  "version": "2.0.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "npx eslint . --ext .ts,.tsx"
   },
   "dependencies": {
     "@react-navigation/native": "^7.1.21",
@@ -29,7 +32,11 @@
     "react-native-svg": "^15.15.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
+    "jest": "^30.2.0",
+    "jest-expo": "^54.0.13",
+    "ts-jest": "^29.4.5",
     "typescript": "~5.9.2"
   },
   "private": true
