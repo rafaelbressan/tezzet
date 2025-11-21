@@ -1,0 +1,24 @@
+# Archive folder (legacy Android code)
+archive/
+
+# Tests
+__tests__/
+*.test.ts
+*.test.tsx
+jest.config.js
+
+# Development files
+.git/
+.github/
+*.md
+!README.md
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

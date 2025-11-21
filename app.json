@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "tezzet",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -14,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "rio.tezos.tezzet"
+      "bundleIdentifier": "rio.tezos.tezzet",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Tezzet uses Face ID to secure your wallet access.",
+        "NSCameraUsageDescription": "Tezzet uses the camera to scan QR codes for receiving payments."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +27,12 @@
         "backgroundColor": "#0D61FF"
       },
       "package": "rio.tezos.tezzet",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -37,6 +47,18 @@
         }
       ],
       "expo-local-authentication"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    },
+    "owner": "tezosrio",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
+    }
   }
 }
