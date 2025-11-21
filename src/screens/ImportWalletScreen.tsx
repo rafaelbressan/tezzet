@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { useTheme } from '../hooks/useTheme';
 import { WalletService } from '../services/wallet';
 import { RootStackParamList } from '../types';
 
@@ -13,6 +14,8 @@ type Props = {
 
 export function ImportWalletScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const { colors } = theme;
   const [mnemonic, setMnemonic] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -35,9 +38,9 @@ export function ImportWalletScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <Text style={styles.title}>{t('importWallet.title')}</Text>
-      <Text style={styles.description}>{t('importWallet.description')}</Text>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Text style={[styles.title, { color: colors.text }]}>{t('importWallet.title')}</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>{t('importWallet.description')}</Text>
       <Input
         label={t('importWallet.label')}
         value={mnemonic}
@@ -53,8 +56,8 @@ export function ImportWalletScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 16 },
-  description: { fontSize: 16, color: '#666', lineHeight: 24, marginBottom: 24 },
+  container: { flex: 1, padding: 24 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  description: { fontSize: 16, lineHeight: 24, marginBottom: 24 },
   actions: { marginTop: 24 },
 });

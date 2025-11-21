@@ -4,3 +4,4 @@ export { ImportWalletScreen } from './ImportWalletScreen';
 export { WalletScreen } from './WalletScreen';
 export { SendScreen } from './SendScreen';
 export { ReceiveScreen } from './ReceiveScreen';
+export { SettingsScreen } from './SettingsScreen';

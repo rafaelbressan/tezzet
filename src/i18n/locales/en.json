@@ -78,5 +78,12 @@
     "permissionRequired": "Camera access is required to scan QR codes.",
     "grantPermission": "Grant Permission",
     "close": "Close"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
   }
 }

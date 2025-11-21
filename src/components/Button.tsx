@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface ButtonProps {
   title: string;
@@ -10,20 +11,24 @@ interface ButtonProps {
 }
 
 export function Button({ title, onPress, variant = 'primary', loading, disabled }: ButtonProps) {
+  const { theme } = useTheme();
+  const { colors } = theme;
+
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        variant === 'secondary' && styles.secondary,
+        { backgroundColor: colors.primary },
+        variant === 'secondary' && [styles.secondary, { borderColor: colors.primary, backgroundColor: 'transparent' }],
         disabled && styles.disabled,
       ]}
       onPress={onPress}
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : '#0D61FF'} />
+        <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.primary} />
       ) : (
-        <Text style={[styles.text, variant === 'secondary' && styles.secondaryText]}>
+        <Text style={[styles.text, variant === 'secondary' && { color: colors.primary }]}>
           {title}
         </Text>
       )}
@@ -33,7 +38,6 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled 
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#0D61FF',
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -41,9 +45,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondary: {
-    backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#0D61FF',
   },
   disabled: {
     opacity: 0.5,
@@ -52,8 +54,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  secondaryText: {
-    color: '#0D61FF',
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextInput, StyleSheet, View, Text } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface InputProps {
   value: string;
@@ -20,15 +21,18 @@ export function Input({
   secureTextEntry,
   keyboardType = 'default',
 }: InputProps) {
+  const { theme } = useTheme();
+  const { colors } = theme;
+
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
       <TextInput
-        style={[styles.input, multiline && styles.multiline]}
+        style={[styles.input, multiline && styles.multiline, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.border }]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#999"
+        placeholderTextColor={colors.textMuted}
         multiline={multiline}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
@@ -46,18 +50,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#f5f5f5',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
     fontSize: 16,
-    color: '#333',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
   },
   multiline: {
     minHeight: 100,

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { QRScanner } from '../components/QRScanner';
+import { useTheme } from '../hooks/useTheme';
 import { WalletService } from '../services/wallet';
 import { RootStackParamList } from '../types';
 
@@ -16,6 +17,8 @@ type Props = {
 
 export function SendScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const { colors } = theme;
   const [recipient, setRecipient] = useState(route.params?.address || '');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,13 +71,13 @@ export function SendScreen({ navigation, route }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <Text style={styles.title}>{t('sendScreen.title')}</Text>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Text style={[styles.title, { color: colors.text }]}>{t('sendScreen.title')}</Text>
       <View style={styles.inputRow}>
         <View style={styles.inputContainer}>
           <Input label={t('sendScreen.recipientLabel')} value={recipient} onChangeText={setRecipient} placeholder={t('sendScreen.recipientPlaceholder')} />
         </View>
-        <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanner(true)}>
+        <TouchableOpacity style={[styles.scanButton, { backgroundColor: colors.primary }]} onPress={() => setShowScanner(true)}>
           <Text style={styles.scanButtonText}>{t('common.scan')}</Text>
         </TouchableOpacity>
       </View>
@@ -90,11 +93,11 @@ export function SendScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 24 },
+  container: { flex: 1, padding: 24 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 24 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end' },
   inputContainer: { flex: 1 },
-  scanButton: { backgroundColor: '#0D61FF', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginLeft: 8, marginBottom: 16 },
+  scanButton: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginLeft: 8, marginBottom: 16 },
   scanButtonText: { color: '#fff', fontWeight: '600' },
   actions: { marginTop: 24 },
 });

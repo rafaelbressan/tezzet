@@ -78,5 +78,12 @@
     "permissionRequired": "Acesso à câmera é necessário para escanear QR codes.",
     "grantPermission": "Permitir Acesso",
     "close": "Fechar"
+  },
+  "settings": {
+    "title": "Configurações",
+    "appearance": "Aparência",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Escuro"
   }
 }
