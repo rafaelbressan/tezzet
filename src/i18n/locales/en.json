@@ -1,0 +1,82 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "ok": "OK",
+    "error": "Error",
+    "success": "Success",
+    "copy": "Copy",
+    "share": "Share",
+    "scan": "Scan",
+    "send": "Send",
+    "receive": "Receive",
+    "balance": "Balance",
+    "address": "Address",
+    "amount": "Amount"
+  },
+  "welcome": {
+    "title": "Tezzet",
+    "subtitle": "Tezos Wallet",
+    "description": "A fast, lightweight, and secure wallet for the Tezos blockchain.",
+    "createWallet": "Create New Wallet",
+    "importWallet": "Import Existing Wallet"
+  },
+  "createWallet": {
+    "title": "Create New Wallet",
+    "description": "We will generate a new wallet with a 24-word recovery phrase. Make sure to write it down and store it securely.",
+    "generate": "Generate Wallet",
+    "recoveryTitle": "Your Recovery Phrase",
+    "recoveryWarning": "Write down these 24 words in order and store them in a secure location. Never share them with anyone.",
+    "confirmBackup": "I Have Saved My Recovery Phrase",
+    "backupConfirmedTitle": "Backup Confirmed",
+    "backupConfirmedMessage": "Make sure you have saved your recovery phrase in a secure location. You will need it to recover your wallet."
+  },
+  "importWallet": {
+    "title": "Import Wallet",
+    "description": "Enter your 12 or 24 word recovery phrase to restore your wallet.",
+    "placeholder": "Enter your recovery phrase...",
+    "label": "Recovery Phrase",
+    "import": "Import Wallet",
+    "invalidPhrase": "Invalid Phrase",
+    "invalidPhraseMessage": "Please enter a valid 12 or 24 word recovery phrase.",
+    "importError": "Failed to import wallet. Please check your recovery phrase."
+  },
+  "wallet": {
+    "loadingWallet": "Loading wallet...",
+    "recentTransactions": "Recent Transactions",
+    "noTransactions": "No transactions yet",
+    "sent": "Sent",
+    "received": "Received"
+  },
+  "sendScreen": {
+    "title": "Send XTZ",
+    "recipientLabel": "Recipient Address",
+    "recipientPlaceholder": "tz1...",
+    "amountLabel": "Amount (XTZ)",
+    "amountPlaceholder": "0.00",
+    "invalidAddress": "Invalid Address",
+    "invalidAddressMessage": "Please enter a valid Tezos address.",
+    "invalidAmount": "Invalid Amount",
+    "invalidAmountMessage": "Please enter a valid amount.",
+    "confirmTitle": "Confirm Transaction",
+    "confirmMessage": "Send {{amount}} XTZ to {{address}}...?",
+    "successMessage": "Transaction sent!\nHash: {{hash}}...",
+    "errorMessage": "Failed to send transaction.",
+    "invalidQR": "Invalid QR Code",
+    "invalidQRMessage": "The scanned QR code does not contain a valid Tezos address."
+  },
+  "receiveScreen": {
+    "title": "Receive XTZ",
+    "description": "Share your address or scan the QR code to receive XTZ.",
+    "yourAddress": "Your Address",
+    "copyAddress": "Copy Address",
+    "copied": "Copied",
+    "copiedMessage": "Address copied to clipboard."
+  },
+  "scanner": {
+    "permissionRequired": "Camera access is required to scan QR codes.",
+    "grantPermission": "Grant Permission",
+    "close": "Close"
+  }
+}

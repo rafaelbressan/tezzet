@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, Modal, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { QRScanner } from '../components/QRScanner';
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function SendScreen({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const [recipient, setRecipient] = useState(route.params?.address || '');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,38 +26,38 @@ export function SendScreen({ navigation, route }: Props) {
     if (WalletService.isValidAddress(address)) {
       setRecipient(address);
     } else {
-      Alert.alert('Invalid QR Code', 'The scanned QR code does not contain a valid Tezos address.');
+      Alert.alert(t('sendScreen.invalidQR'), t('sendScreen.invalidQRMessage'));
     }
   };
 
   const handleSend = async () => {
     if (!WalletService.isValidAddress(recipient)) {
-      Alert.alert('Invalid Address', 'Please enter a valid Tezos address.');
+      Alert.alert(t('sendScreen.invalidAddress'), t('sendScreen.invalidAddressMessage'));
       return;
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount.');
+      Alert.alert(t('sendScreen.invalidAmount'), t('sendScreen.invalidAmountMessage'));
       return;
     }
 
     Alert.alert(
-      'Confirm Transaction',
-      `Send ${amount} XTZ to ${recipient.substring(0, 10)}...?`,
+      t('sendScreen.confirmTitle'),
+      t('sendScreen.confirmMessage', { amount, address: recipient.substring(0, 10) }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Confirm',
+          text: t('common.confirm'),
           onPress: async () => {
             setLoading(true);
             try {
               const hash = await WalletService.sendTransaction(recipient, numAmount);
-              Alert.alert('Success', `Transaction sent!\nHash: ${hash.substring(0, 20)}...`, [
-                { text: 'OK', onPress: () => navigation.goBack() },
+              Alert.alert(t('common.success'), t('sendScreen.successMessage', { hash: hash.substring(0, 20) }), [
+                { text: t('common.ok'), onPress: () => navigation.goBack() },
               ]);
             } catch (error: any) {
-              Alert.alert('Error', error?.message || 'Failed to send transaction.');
+              Alert.alert(t('common.error'), error?.message || t('sendScreen.errorMessage'));
             } finally {
               setLoading(false);
             }
@@ -66,38 +68,20 @@ export function SendScreen({ navigation, route }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <Text style={styles.title}>Send XTZ</Text>
-
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Text style={styles.title}>{t('sendScreen.title')}</Text>
       <View style={styles.inputRow}>
         <View style={styles.inputContainer}>
-          <Input
-            label="Recipient Address"
-            value={recipient}
-            onChangeText={setRecipient}
-            placeholder="tz1..."
-          />
+          <Input label={t('sendScreen.recipientLabel')} value={recipient} onChangeText={setRecipient} placeholder={t('sendScreen.recipientPlaceholder')} />
         </View>
         <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanner(true)}>
-          <Text style={styles.scanButtonText}>Scan</Text>
+          <Text style={styles.scanButtonText}>{t('common.scan')}</Text>
         </TouchableOpacity>
       </View>
-
-      <Input
-        label="Amount (XTZ)"
-        value={amount}
-        onChangeText={setAmount}
-        placeholder="0.00"
-        keyboardType="decimal-pad"
-      />
-
+      <Input label={t('sendScreen.amountLabel')} value={amount} onChangeText={setAmount} placeholder={t('sendScreen.amountPlaceholder')} keyboardType="decimal-pad" />
       <View style={styles.actions}>
-        <Button title="Send" onPress={handleSend} loading={loading} />
+        <Button title={t('common.send')} onPress={handleSend} loading={loading} />
       </View>
-
       <Modal visible={showScanner} animationType="slide">
         <QRScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
       </Modal>
@@ -106,37 +90,11 @@ export function SendScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  inputContainer: {
-    flex: 1,
-  },
-  scanButton: {
-    backgroundColor: '#0D61FF',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginLeft: 8,
-    marginBottom: 16,
-  },
-  scanButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  actions: {
-    marginTop: 24,
-  },
+  container: { flex: 1, backgroundColor: '#fff', padding: 24 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 24 },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  inputContainer: { flex: 1 },
+  scanButton: { backgroundColor: '#0D61FF', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginLeft: 8, marginBottom: 16 },
+  scanButtonText: { color: '#fff', fontWeight: '600' },
+  actions: { marginTop: 24 },
 });
