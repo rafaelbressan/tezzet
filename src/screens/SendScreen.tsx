@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, Modal, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { QRScanner } from '../components/QRScanner';
 import { WalletService } from '../services/wallet';
 import { RootStackParamList } from '../types';
 
@@ -16,6 +17,16 @@ export function SendScreen({ navigation, route }: Props) {
   const [recipient, setRecipient] = useState(route.params?.address || '');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleScan = (address: string) => {
+    setShowScanner(false);
+    if (WalletService.isValidAddress(address)) {
+      setRecipient(address);
+    } else {
+      Alert.alert('Invalid QR Code', 'The scanned QR code does not contain a valid Tezos address.');
+    }
+  };
 
   const handleSend = async () => {
     if (!WalletService.isValidAddress(recipient)) {
@@ -61,12 +72,19 @@ export function SendScreen({ navigation, route }: Props) {
     >
       <Text style={styles.title}>Send XTZ</Text>
 
-      <Input
-        label="Recipient Address"
-        value={recipient}
-        onChangeText={setRecipient}
-        placeholder="tz1..."
-      />
+      <View style={styles.inputRow}>
+        <View style={styles.inputContainer}>
+          <Input
+            label="Recipient Address"
+            value={recipient}
+            onChangeText={setRecipient}
+            placeholder="tz1..."
+          />
+        </View>
+        <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanner(true)}>
+          <Text style={styles.scanButtonText}>Scan</Text>
+        </TouchableOpacity>
+      </View>
 
       <Input
         label="Amount (XTZ)"
@@ -79,6 +97,10 @@ export function SendScreen({ navigation, route }: Props) {
       <View style={styles.actions}>
         <Button title="Send" onPress={handleSend} loading={loading} />
       </View>
+
+      <Modal visible={showScanner} animationType="slide">
+        <QRScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -94,6 +116,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 24,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  inputContainer: {
+    flex: 1,
+  },
+  scanButton: {
+    backgroundColor: '#0D61FF',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginLeft: 8,
+    marginBottom: 16,
+  },
+  scanButtonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   actions: {
     marginTop: 24,

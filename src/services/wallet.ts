@@ -1,32 +1,16 @@
 import { TezosToolkit } from '@taquito/taquito';
 import { InMemorySigner } from '@taquito/signer';
 import { validateAddress, ValidationResult } from '@taquito/utils';
-import { TEZOS_RPC, DEFAULT_NETWORK } from '../constants/config';
+import * as bip39 from 'bip39';
+import { TEZOS_RPC, DEFAULT_NETWORK, TZKT_API } from '../constants/config';
 import { StorageService } from './storage';
+import { Transaction } from '../types';
 
 const Tezos = new TezosToolkit(TEZOS_RPC[DEFAULT_NETWORK]);
 
-// Generate a new mnemonic (using crypto API)
-function generateMnemonic(): string {
-  const wordlist = [
-    'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
-    'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
-    'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual',
-    // This is a simplified wordlist - in production use bip39 library
-  ];
-  // For demo purposes - use proper bip39 in production
-  const words: string[] = [];
-  for (let i = 0; i < 24; i++) {
-    const randomIndex = Math.floor(Math.random() * wordlist.length);
-    words.push(wordlist[randomIndex]);
-  }
-  return words.join(' ');
-}
-
 export const WalletService = {
   async createWallet(): Promise<{ address: string; mnemonic: string }> {
-    // In production, use proper bip39 mnemonic generation
-    const mnemonic = generateMnemonic();
+    const mnemonic = bip39.generateMnemonic(256); // 24 words
     const signer = InMemorySigner.fromMnemonic({ mnemonic });
     const address = await signer.publicKeyHash();
 
@@ -39,10 +23,16 @@ export const WalletService = {
   },
 
   async importWallet(mnemonic: string): Promise<string> {
-    const signer = InMemorySigner.fromMnemonic({ mnemonic: mnemonic.trim() });
+    const normalized = mnemonic.trim().toLowerCase();
+
+    if (!bip39.validateMnemonic(normalized)) {
+      throw new Error('Invalid mnemonic phrase');
+    }
+
+    const signer = InMemorySigner.fromMnemonic({ mnemonic: normalized });
     const address = await signer.publicKeyHash();
 
-    await StorageService.saveMnemonic(mnemonic.trim());
+    await StorageService.saveMnemonic(normalized);
     await StorageService.saveWalletAddress(address);
 
     Tezos.setProvider({ signer });
@@ -70,6 +60,28 @@ export const WalletService = {
     }
   },
 
+  async getTransactionHistory(address: string, limit = 20): Promise<Transaction[]> {
+    try {
+      const response = await fetch(
+        `${TZKT_API}/accounts/${address}/operations?type=transaction&limit=${limit}`
+      );
+      const data = await response.json();
+
+      return data.map((op: any) => ({
+        hash: op.hash,
+        amount: (op.amount / 1_000_000).toFixed(6),
+        destination: op.target?.address || op.sender?.address,
+        sender: op.sender?.address,
+        timestamp: new Date(op.timestamp),
+        status: op.status === 'applied' ? 'confirmed' : 'failed',
+        type: op.sender?.address === address ? 'sent' : 'received',
+      }));
+    } catch (error) {
+      console.error('Error fetching transaction history:', error);
+      return [];
+    }
+  },
+
   async sendTransaction(to: string, amount: number): Promise<string> {
     const operation = await Tezos.contract.transfer({
       to,
@@ -81,6 +93,10 @@ export const WalletService = {
 
   isValidAddress(address: string): boolean {
     return validateAddress(address) === ValidationResult.VALID;
+  },
+
+  validateMnemonic(mnemonic: string): boolean {
+    return bip39.validateMnemonic(mnemonic.trim().toLowerCase());
   },
 
   getTezosToolkit(): TezosToolkit {

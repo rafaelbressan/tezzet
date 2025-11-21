@@ -8,8 +8,10 @@ export interface Transaction {
   hash: string;
   amount: string;
   destination: string;
+  sender?: string;
   timestamp: Date;
   status: 'pending' | 'confirmed' | 'failed';
+  type: 'sent' | 'received';
 }
 
 export type RootStackParamList = {
@@ -20,4 +22,5 @@ export type RootStackParamList = {
   Send: { address?: string };
   Receive: undefined;
   Settings: undefined;
+  Scanner: { onScan: (address: string) => void };
 };

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, RefreshControl, ScrollView } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button } from '../components/Button';
+import { TransactionList } from '../components/TransactionList';
 import { useWallet } from '../hooks/useWallet';
-import { RootStackParamList } from '../types';
+import { WalletService } from '../services/wallet';
+import { RootStackParamList, Transaction } from '../types';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Wallet'>;
@@ -11,6 +13,31 @@ type Props = {
 
 export function WalletScreen({ navigation }: Props) {
   const { address, balance, loading, refreshing, refreshBalance } = useWallet();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loadingTx, setLoadingTx] = useState(false);
+
+  const loadTransactions = async () => {
+    if (!address) return;
+    setLoadingTx(true);
+    try {
+      const txs = await WalletService.getTransactionHistory(address);
+      setTransactions(txs);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    } finally {
+      setLoadingTx(false);
+    }
+  };
+
+  useEffect(() => {
+    if (address) {
+      loadTransactions();
+    }
+  }, [address]);
+
+  const handleRefresh = async () => {
+    await Promise.all([refreshBalance(), loadTransactions()]);
+  };
 
   if (loading) {
     return (
@@ -25,7 +52,7 @@ export function WalletScreen({ navigation }: Props) {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={refreshBalance} />
+        <RefreshControl refreshing={refreshing || loadingTx} onRefresh={handleRefresh} />
       }
     >
       <View style={styles.balanceCard}>
@@ -52,8 +79,9 @@ export function WalletScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>Pull to refresh balance</Text>
+      <View style={styles.transactionsSection}>
+        <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        <TransactionList transactions={transactions} currentAddress={address || ''} />
       </View>
     </ScrollView>
   );
@@ -66,6 +94,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
+    paddingBottom: 48,
   },
   loadingContainer: {
     flex: 1,
@@ -112,11 +141,13 @@ const styles = StyleSheet.create({
   actionSpacer: {
     width: 16,
   },
-  infoSection: {
-    alignItems: 'center',
+  transactionsSection: {
+    marginTop: 8,
   },
-  infoTitle: {
-    fontSize: 14,
-    color: '#999',
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
   },
 });
