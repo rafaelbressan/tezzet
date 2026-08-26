@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suíte Tezos.Rio — marca, narrativa e tokens</title>
+<meta name="description" content="O espaço unificado de Tezzet e TAPS: uma identidade, um vocabulário, um conjunto de tokens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens/tokens.css">
+<style>
+/* ============================================================
+   Página de referência. Só layout — todo valor vem de tokens.css
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font-family: var(--f-body);
+  font-size: var(--t-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { width: min(100% - var(--s-8), var(--shell)); margin-inline: auto; }
+
+/* --- marca ------------------------------------------------- */
+.mark {
+  font-family: var(--f-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.82;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.08em;
+}
+.mark__slash {
+  display: inline-block;
+  width: 0.30em; align-self: stretch;
+  background: var(--c-gold);
+  transform: skewX(calc(-1 * var(--cut-angle)));
+}
+
+/* --- cabeçalho --------------------------------------------- */
+.top {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--c-ink); color: var(--c-paper);
+  border-bottom: 1px solid var(--c-gold-deep);
+}
+.top__in {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-6); padding-block: var(--s-3);
+}
+.top .mark { font-size: var(--t-md); }
+.top__nav { display: flex; gap: var(--s-6); flex-wrap: wrap; }
+.top__link {
+  color: var(--c-paper); text-decoration: none;
+  font-size: var(--t-xs); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  padding-bottom: 2px; border-bottom: 2px solid transparent;
+  transition: border-color var(--m-fast) var(--m-ease), color var(--m-fast) var(--m-ease);
+}
+.top__link:hover, .top__link:focus-visible { border-bottom-color: var(--c-gold); color: var(--c-gold); }
+@media (max-width: 700px) { .top__nav { display: none; } }
+
+/* --- herói -------------------------------------------------- */
+.hero {
+  position: relative; overflow: hidden;
+  background: var(--c-ink); color: var(--c-paper);
+  padding-block: var(--s-24) var(--s-16);
+  clip-path: var(--cut-divider);
+}
+/* A assinatura: o corte que abre a página. Acontece uma vez.
+   Fica na borda, nunca sob texto — dourado sobre claro é ilegível (1,72:1). */
+.hero__cut {
+  position: absolute; top: -10%; bottom: -10%; left: 0;
+  width: 74px; background: var(--c-gold);
+  transform: skewX(calc(-1 * var(--cut-angle))) translateX(-160%);
+  animation: cut-open var(--m-reveal) var(--m-ease) 200ms forwards;
+  pointer-events: none;
+}
+@keyframes cut-open { to { transform: skewX(calc(-1 * var(--cut-angle))) translateX(-38%); } }
+
+.hero__in { position: relative; z-index: 1; padding-left: clamp(0px, 4vw, 56px); }
+.hero__eyebrow {
+  font-family: var(--f-data); font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: 0.24em;
+  color: var(--c-gold); margin: 0 0 var(--s-6);
+}
+.hero__title {
+  font-family: var(--f-display); font-weight: 900;
+  font-size: clamp(2.8rem, 11vw, 8rem);
+  line-height: 0.84; letter-spacing: -0.025em;
+  text-transform: uppercase; margin: 0;
+  max-width: 14ch;
+}
+.hero__title em { font-style: normal; color: var(--c-gold); }
+.hero__lede {
+  max-width: 46ch; margin: var(--s-8) 0 0;
+  font-size: var(--t-md); line-height: 1.55; color: #CFCFCF;
+}
+
+/* As duas metades, sob o herói */
+.halves {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: var(--s-6);
+  margin-top: var(--s-16); padding-top: var(--s-8);
+  border-top: 1px solid #333;
+}
+.half__name {
+  font-family: var(--f-display); font-weight: 800;
+  font-size: var(--t-2xl); letter-spacing: -0.01em;
+  text-transform: uppercase; line-height: 1; margin: 0;
+}
+.half__verb {
+  font-family: var(--f-data); font-size: var(--t-sm);
+  text-transform: uppercase; letter-spacing: 0.22em;
+  color: var(--c-gold); margin: var(--s-2) 0 0;
+}
+.half__note { font-size: var(--t-sm); color: #9A9A9A; margin: var(--s-2) 0 0; max-width: 28ch; }
+.halves__cut {
+  width: 8px; align-self: stretch; min-height: 132px;
+  background: var(--c-gold);
+  transform: skewX(calc(-1 * var(--cut-angle)));
+}
+.half--right { text-align: right; }
+.half--right .half__note { margin-left: auto; }
+@media (max-width: 700px) {
+  /* Não há margem para a cunha sem que ela caia sob o texto.
+     A assinatura continua legível no wordmark, em CORTE e no divisor. */
+  .hero__cut { display: none; }
+  .hero__in { padding-left: 0; }
+  .halves { grid-template-columns: 1fr; }
+  .halves__cut { width: 100%; height: 4px; min-height: 0; }
+  .half--right { text-align: left; }
+  .half--right .half__note { margin-left: 0; }
+}
+
+/* --- seções -------------------------------------------------- */
+.band { padding-block: var(--s-24); }
+.band--tight { padding-block: var(--s-16); }
+.band--ink { background: var(--c-ink); color: var(--c-paper); }
+
+.head { margin-bottom: var(--s-12); }
+.head__no {
+  font-family: var(--f-data); font-size: var(--t-xs);
+  letter-spacing: 0.2em; color: var(--c-steel-deep);
+  text-transform: uppercase; display: block; margin-bottom: var(--s-3);
+}
+.band--ink .head__no { color: var(--c-gold); }
+.head__title {
+  font-family: var(--f-display); font-weight: 800;
+  font-size: clamp(2rem, 5.5vw, var(--t-3xl));
+  line-height: 0.92; letter-spacing: -0.02em;
+  text-transform: uppercase; margin: 0;
+}
+.head__sub { max-width: var(--measure); margin: var(--s-4) 0 0; color: var(--c-steel-deep); }
+.band--ink .head__sub { color: #9A9A9A; }
+
+.rule { height: 2px; background: var(--c-ink); border: 0; margin: 0; }
+
+/* --- grades genéricas ---------------------------------------- */
+.grid { display: grid; gap: var(--s-6); }
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); }
+.grid--top { align-items: start; }
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.grid--4 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+
+/* --- amostras de cor ----------------------------------------- */
+.swatch { border: 1px solid var(--c-ink); display: flex; flex-direction: column; }
+.swatch__chip { height: 104px; display: flex; align-items: flex-end; padding: var(--s-3); }
+.swatch__body { padding: var(--s-3); background: var(--c-surface); border-top: 1px solid var(--c-ink); flex: 1; }
+.swatch__name { font-family: var(--f-body); font-weight: 700; font-size: var(--t-sm); }
+.swatch__hex { font-family: var(--f-data); font-size: var(--t-xs); color: var(--c-steel-deep); }
+.swatch__use { font-size: var(--t-xs); color: var(--c-steel-deep); margin-top: var(--s-2); line-height: 1.45; }
+
+/* --- tabela de contraste -------------------------------------- */
+.table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+.table th, .table td { text-align: left; padding: var(--s-3); border-bottom: 1px solid var(--c-steel); vertical-align: top; }
+.table th {
+  font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--c-steel-deep); font-weight: 600;
+}
+.table td:first-child { font-family: var(--f-data); }
+.ratio { font-family: var(--f-data); font-variant-numeric: tabular-nums; font-weight: 600; }
+.verdict { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict--ok { color: var(--c-positive); }
+.verdict--no { color: var(--c-negative); }
+
+/* --- espécimes de tipo ----------------------------------------- */
+.spec { border-top: 2px solid var(--c-ink); padding-top: var(--s-4); margin-bottom: var(--s-8); }
+.spec__meta {
+  font-family: var(--f-data); font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--c-steel-deep); margin-bottom: var(--s-3);
+}
+.spec__display { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.4rem, 8vw, 5rem); line-height: 0.86; text-transform: uppercase; letter-spacing: -0.02em; margin: 0; }
+.spec__body { font-family: var(--f-body); font-size: var(--t-md); max-width: var(--measure); margin: 0; }
+.spec__data { font-family: var(--f-data); font-size: var(--t-md); font-variant-numeric: tabular-nums; margin: 0; }
+
+.scale__row { display: flex; align-items: baseline; gap: var(--s-4); padding-block: var(--s-2); border-bottom: 1px solid #D5D5D5; }
+.scale__key { font-family: var(--f-data); font-size: var(--t-xs); color: var(--c-steel-deep); width: 5.5rem; flex: none; }
+.scale__demo { font-family: var(--f-display); font-weight: 800; text-transform: uppercase; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- kit ------------------------------------------------------- */
+.demo {
+  background: var(--c-surface); border: 1px solid var(--c-ink);
+  clip-path: var(--cut-corner); padding: var(--s-6);
+}
+.demo__label {
+  font-family: var(--f-data); font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: 0.16em;
+  color: var(--c-steel-deep); margin: 0 0 var(--s-4);
+}
+.demo__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.demo__stack { display: flex; flex-direction: column; gap: var(--s-3); }
+.demo__rule { font-size: var(--t-xs); color: var(--c-steel-deep); margin: var(--s-4) 0 0; line-height: 1.5; border-left: 2px solid var(--c-gold); padding-left: var(--s-3); }
+
+.big-amount { font-family: var(--f-data); font-variant-numeric: tabular-nums; font-size: var(--t-2xl); font-weight: 500; letter-spacing: -0.02em; }
+
+/* --- voz --------------------------------------------------------- */
+.says { display: grid; gap: var(--s-4); }
+.say { border-left: 3px solid var(--c-steel); padding-left: var(--s-4); }
+.say--no { border-left-color: var(--c-negative); }
+.say--yes { border-left-color: var(--c-positive); }
+.say__tag {
+  font-family: var(--f-data); font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: 0.14em; display: block; margin-bottom: var(--s-1);
+}
+.say--no .say__tag { color: var(--c-negative); }
+.say--yes .say__tag { color: var(--c-positive); }
+.say__text { margin: 0; font-size: var(--t-md); }
+
+/* --- adoção ------------------------------------------------------ */
+.step { border-top: 2px solid var(--c-gold); padding-top: var(--s-4); }
+.step__title { font-family: var(--f-display); font-weight: 800; font-size: var(--t-lg); text-transform: uppercase; letter-spacing: -0.01em; margin: 0 0 var(--s-3); line-height: 1; }
+.step__text { font-size: var(--t-sm); color: #9A9A9A; margin: 0; }
+.step__text code { font-family: var(--f-data); color: var(--c-gold); font-size: 0.92em; }
+
+/* --- rodapé ------------------------------------------------------- */
+.foot { background: var(--c-ink); color: #7A7A7A; padding-block: var(--s-12); border-top: 1px solid #333; }
+.foot__in { display: flex; flex-wrap: wrap; gap: var(--s-6); justify-content: space-between; align-items: flex-end; }
+.foot p { margin: 0; font-size: var(--t-xs); }
+.foot .mark { font-size: var(--t-md); color: var(--c-paper); }
+
+/* --- revelação por rolagem ----------------------------------------- */
+.rise { opacity: 0; transform: translateY(14px); transition: opacity var(--m-slow) var(--m-ease), transform var(--m-slow) var(--m-ease); }
+.rise.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .rise { opacity: 1; transform: none; } }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="shell top__in">
+    <a class="mark" href="#topo" style="text-decoration:none;color:inherit">
+      TEZ<span class="mark__slash" aria-hidden="true"></span>ZET<span class="sr-only"> · Suíte Tezos.Rio</span>
+    </a>
+    <nav class="top__nav" aria-label="Seções">
+      <a class="top__link" href="#lados">Os dois lados</a>
+      <a class="top__link" href="#tokens">Tokens</a>
+      <a class="top__link" href="#kit">Kit</a>
+      <a class="top__link" href="#voz">Voz</a>
+      <a class="top__link" href="#adocao">Adoção</a>
+    </nav>
+  </div>
+</header>
+
+<main id="topo">
+
+  <!-- ============ HERÓI ============ -->
+  <section class="hero">
+    <div class="hero__cut" aria-hidden="true"></div>
+    <div class="shell hero__in">
+      <p class="hero__eyebrow">Suíte Tezos.Rio · versão 1.0</p>
+      <h1 class="hero__title">Tezos, dos dois lados do <em>corte</em>.</h1>
+      <p class="hero__lede">
+        Dois produtos, uma identidade. O dourado que parte o logotipo do Tezzet ao meio
+        virou o sistema inteiro: um ângulo, uma cor de acento, e disciplina em todo o resto.
+      </p>
+
+      <div class="halves">
+        <div class="half">
+          <h2 class="half__name">Tezzet</h2>
+          <p class="half__verb">Guardar</p>
+          <p class="half__note">Carteira Tezos não-custodial. Para quem tem XTZ e delega.</p>
+        </div>
+        <div class="halves__cut" aria-hidden="true"></div>
+        <div class="half half--right">
+          <h2 class="half__name">TAPS</h2>
+          <p class="half__verb">Pagar</p>
+          <p class="half__note">Distribuição automática de recompensas. Para quem opera um baker.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OS DOIS LADOS ============ -->
+  <section class="band" id="lados">
+    <div class="shell">
+      <div class="head rise">
+        <span class="head__no">a ideia</span>
+        <h2 class="head__title">A identidade já existia.<br>Ninguém tinha reparado.</h2>
+        <p class="head__sub">
+          O logotipo do Tezzet é a palavra cortada ao meio por um golpe dourado: <strong>TEZ</strong> de um lado,
+          <strong>ZET</strong> do outro. Esse corte é a coisa mais específica que os dois produtos têm — e descreve
+          exatamente o que eles são juntos: os dois lados de uma mesma transação econômica na Tezos.
+          Alguém delega. Alguém paga de volta.
+        </p>
+      </div>
+
+      <div class="grid grid--2 rise">
+        <article class="t-card">
+          <p class="demo__label">Tezzet — guardar</p>
+          <p style="margin:0 0 var(--s-4)">
+            Quem tem XTZ precisa guardar, receber, enviar e delegar. Hoje é um app Android parado em 2019;
+            o plano é uma versão web como base e um mobile reconstruído a partir dela.
+          </p>
+          <p class="demo__rule">Estado: congelado. Ver <code>ANALYSIS.md</code> na raiz deste repositório.</p>
+        </article>
+        <article class="t-card">
+          <p class="demo__label">TAPS — pagar</p>
+          <p style="margin:0 0 var(--s-4)">
+            Quem opera um baker precisa calcular, aprovar e comprovar pagamentos a cada ciclo.
+            Hoje é um backend NestJS sem interface; o plano é um app de acompanhamento e aprovação.
+          </p>
+          <p class="demo__rule">Estado: backend não compila. Ver <code>ANALYSIS.md</code> no repositório taps.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ TOKENS ============ -->
+  <section class="band" id="tokens">
+    <div class="shell">
+      <div class="head rise">
+        <span class="head__no">tokens</span>
+        <h2 class="head__title">Cor</h2>
+        <p class="head__sub">
+          Cinco valores, três deles vindos direto do <code>colors.xml</code> do app original.
+          Um acento só. Nenhum produto ganha paleta própria.
+        </p>
+      </div>
+
+      <div class="grid grid--4 rise">
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#0A0A0A"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">ink</div><div class="swatch__hex">#0A0A0A</div>
+            <p class="swatch__use">Fundo dominante e texto principal.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#C8B08B"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">gold</div><div class="swatch__hex">#C8B08B</div>
+            <p class="swatch__use">O acento. Só no corte. Nunca texto sobre claro.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#A98C63"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">gold-deep</div><div class="swatch__hex">#A98C63</div>
+            <p class="swatch__use">Foco e estado ativo. Passa AA sobre claro.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#EDEDED"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">paper</div><div class="swatch__hex">#EDEDED</div>
+            <p class="swatch__use">Fundo claro. Do app original.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#5A5A5A"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">steel-deep</div><div class="swatch__hex">#5A5A5A</div>
+            <p class="swatch__use">Texto secundário sobre claro.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#2E6B4F"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">positive</div><div class="swatch__hex">#2E6B4F</div>
+            <p class="swatch__use">Pago, confirmado, aplicado.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#8A6A1F"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">attention</div><div class="swatch__hex">#8A6A1F</div>
+            <p class="swatch__use">Pendente, simulação, aguardando.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:#8C2F2F"></div>
+          <div class="swatch__body">
+            <div class="swatch__name">negative</div><div class="swatch__hex">#8C2F2F</div>
+            <p class="swatch__use">Falhou, rejeitado, saldo insuficiente.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rise" style="margin-top:var(--s-16)">
+        <h3 class="head__title" style="font-size:var(--t-xl)">A regra do dourado</h3>
+        <p class="head__sub" style="margin-bottom:var(--s-6)">
+          O dourado é claro. Sobre fundo claro ele não é legível — e essa é a regra mais fácil de quebrar
+          por engano, porque parece bonito. Razões medidas pelo cálculo da WCAG 2.1:
+        </p>
+        <table class="table">
+          <caption class="sr-only">Razões de contraste entre as cores do sistema</caption>
+          <thead>
+            <tr><th scope="col">Combinação</th><th scope="col">Razão</th><th scope="col">Veredito</th><th scope="col">Onde usar</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ink sobre paper</td><td class="ratio">16,15:1</td>
+              <td><span class="verdict verdict--ok">AAA</span></td><td>Texto principal.</td>
+            </tr>
+            <tr>
+              <td>gold sobre ink</td><td class="ratio">9,39:1</td>
+              <td><span class="verdict verdict--ok">AAA</span></td><td>Qualquer texto sobre fundo escuro.</td>
+            </tr>
+            <tr>
+              <td>steel-deep sobre paper</td><td class="ratio">5,29:1</td>
+              <td><span class="verdict verdict--ok">AA</span></td><td>Texto secundário, qualquer tamanho.</td>
+            </tr>
+            <tr>
+              <td>steel sobre paper</td><td class="ratio">4,25:1</td>
+              <td><span class="verdict verdict--no">falha AA</span></td><td>Só réguas, bordas e texto grande.</td>
+            </tr>
+            <tr>
+              <td>gold sobre paper</td><td class="ratio">1,72:1</td>
+              <td><span class="verdict verdict--no">proibido</span></td><td>Nunca como texto. Só preenchimento, régua ou corte.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ TIPOGRAFIA ============ -->
+  <section class="band">
+    <div class="shell">
+      <div class="head rise">
+        <span class="head__no">tokens</span>
+        <h2 class="head__title">Tipografia</h2>
+        <p class="head__sub">
+          Três papéis. O terceiro não é opcional: endereço, hash, valor e ciclo são dados da cadeia,
+          e dados da cadeia precisam ser monoespaçados e tabulares para poderem ser conferidos.
+        </p>
+      </div>
+
+      <div class="rise">
+        <div class="spec">
+          <p class="spec__meta">Display — Big Shoulders Display 800 · títulos e números grandes</p>
+          <p class="spec__display">Guardar &amp; pagar</p>
+        </div>
+        <div class="spec">
+          <p class="spec__meta">Corpo — IBM Plex Sans 400/600 · texto e rótulos</p>
+          <p class="spec__body">
+            Uma carteira e um sistema de pagamento lidam com o dinheiro de outras pessoas.
+            A interface fala baixo, diz exatamente o que vai acontecer, e não comemora.
+          </p>
+        </div>
+        <div class="spec">
+          <p class="spec__meta">Dados — IBM Plex Mono 400/500 · endereço, hash, valor, ciclo</p>
+          <p class="spec__data">tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb<br>1.204,382915 XTZ · ciclo 812</p>
+        </div>
+      </div>
+
+      <div class="rise" style="margin-top:var(--s-12)">
+        <p class="demo__label">Escala — razão 1,25 ancorada em 16px</p>
+        <div class="scale__row"><span class="scale__key">4xl · 61px</span><span class="scale__demo" style="font-size:var(--t-4xl)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">3xl · 49px</span><span class="scale__demo" style="font-size:var(--t-3xl)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">2xl · 39px</span><span class="scale__demo" style="font-size:var(--t-2xl)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">xl · 31px</span><span class="scale__demo" style="font-size:var(--t-xl)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">lg · 25px</span><span class="scale__demo" style="font-size:var(--t-lg)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">md · 20px</span><span class="scale__demo" style="font-size:var(--t-md)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">base · 16px</span><span class="scale__demo" style="font-size:var(--t-base)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">sm · 14px</span><span class="scale__demo" style="font-size:var(--t-sm)">Recompensa</span></div>
+        <div class="scale__row"><span class="scale__key">xs · 12px</span><span class="scale__demo" style="font-size:var(--t-xs)">Recompensa</span></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ FORMA ============ -->
+  <section class="band band--tight">
+    <div class="shell">
+      <div class="head rise">
+        <span class="head__no">tokens</span>
+        <h2 class="head__title">Forma e o corte</h2>
+        <p class="head__sub">
+          Cantos a zero — herdado do <code>button_selector.xml</code> original, que já usava <code>android:radius="0dp"</code>.
+          Sombra dura, sem desfoque. E um ângulo só: <strong>21°</strong>.
+        </p>
+      </div>
+
+      <div class="grid grid--3 rise">
+        <div class="demo">
+          <p class="demo__label">radius: 0</p>
+          <div style="height:72px;background:var(--c-ink)"></div>
+          <p class="demo__rule">Sem exceções. Um canto arredondado destrói a coerência do conjunto.</p>
+        </div>
+        <div class="demo">
+          <p class="demo__label">shadow: hard</p>
+          <div style="height:72px;background:var(--c-surface);border:1px solid var(--c-ink);box-shadow:var(--shadow-hard)"></div>
+          <p class="demo__rule">Deslocamento sem desfoque. Objeto de papel sobre papel, não vidro flutuante.</p>
+        </div>
+        <div class="demo">
+          <p class="demo__label">cut: 21°</p>
+          <div style="height:72px;background:var(--c-ink);clip-path:var(--cut-corner)"></div>
+          <p class="demo__rule">Divisor de seção, chanfro de cartão e preenchimento de botão. Sempre o mesmo ângulo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ KIT ============ -->
+  <section class="band" id="kit">
+    <div class="shell">
+      <div class="head rise">
+        <span class="head__no">kit</span>
+        <h2 class="head__title">O que os dois produtos<br>compartilham de verdade</h2>
+        <p class="head__sub">
+          Não é a estética — é o vocabulário técnico. Endereço, valor, hash, ciclo, status e rede são conceitos
+          da Tezos, não de um produto. Cada um precisa de <strong>uma</strong> implementação correta,
+          com truncamento, precisão e estados de erro resolvidos uma vez só. Tudo abaixo está em
+          <code>tokens/tokens.css</code>.
+        </p>
+      </div>
+
+      <div class="grid grid--2 grid--top rise">
+
+        <div class="demo">
+          <p class="demo__label">Valor em XTZ</p>
+          <p class="big-amount" style="margin:0">1.204,382915<span class="t-amount__unit">XTZ</span></p>
+          <div class="demo__stack" style="margin-top:var(--s-4)">
+            <span class="t-amount">12,500000<span class="t-amount__unit">XTZ</span></span>
+            <span class="t-amount">0,000041<span class="t-amount__unit">XTZ</span></span>
+            <span class="t-amount t-amount--dust">0,000002<span class="t-amount__unit">XTZ</span> — abaixo do mínimo</span>
+          </div>
+          <p class="demo__rule">
+            Seis casas sempre. A unidade da rede é o mutez; arredondar para duas casas é perder dinheiro.
+            Tabular para alinhar a vírgula em listas. No código, <code>bigint</code> em mutez — nunca <code>number</code>.
+          </p>
+        </div>
+
+        <div class="demo">
+          <p class="demo__label">Endereço</p>
+          <div class="demo__stack">
+            <span class="t-address">tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb</span>
+            <span class="t-address t-address--truncated">tz1VSUr8ww…Th8Cjcjb</span>
+            <span class="t-address t-address--truncated">KT1RJ6PbjH…9YtVzHRQ</span>
+          </div>
+          <p class="demo__rule">
+            Truncar no meio, nunca no fim: início e fim são justamente o que a pessoa confere.
+            Sempre copiável, e o valor copiado é o endereço inteiro.
+          </p>
+        </div>
+
+        <div class="demo">
+          <p class="demo__label">Status de pagamento</p>
+          <div class="demo__row">
+            <span class="t-status t-status--paid">Pago</span>
+            <span class="t-status t-status--pending">Pendente</span>
+            <span class="t-status t-status--simulated">Simulação</span>
+            <span class="t-status t-status--failed">Falhou</span>
+          </div>
+          <p class="demo__rule">
+            A cor reforça, o texto significa. Nada aqui depende de enxergar cor — funciona
+            em preto e branco e para quem tem daltonismo.
+          </p>
+        </div>
+
+        <div class="demo">
+          <p class="demo__label">Operação, ciclo e rede</p>
+          <div class="demo__stack">
+            <a class="t-ophash" href="#kit">onvX8mR2…KpQ4uZ ↗</a>
+            <span class="t-cycle">812</span>
+            <div class="demo__row" style="margin-top:var(--s-1)">
+              <span class="t-network t-network--mainnet">Mainnet</span>
+              <span class="t-network t-network--ghostnet">Ghostnet</span>
+            </div>
+          </div>
+          <p class="demo__rule">
+            Hash é sempre link para o explorador. Ciclo nunca aparece como número solto.
+            Ghostnet usa o dourado para gritar; mainnet fica quieta — é o estado normal.
+          </p>
+        </div>
+
+        <div class="demo">
+          <p class="demo__label">Botão — o corte entra na interação</p>
+          <div class="demo__row">
+            <button class="t-button" type="button">Aprovar pagamento</button>
+            <button class="t-button t-button--quiet" type="button">Cancelar</button>
+          </div>
+          <p class="demo__rule">
+            O dourado entra em diagonal, no ângulo do logotipo, e o botão se afasta 2px.
+            A ação primária diz o que acontece: <em>Aprovar pagamento</em> — nunca <em>Enviar</em> ou <em>Confirmar</em>.
+          </p>
+        </div>
+
+        <div class="demo">
+          <p class="demo__label">Campo</p>
+          <label class="t-field">
+            <span class="t-field__label">Endereço de destino</span>
+            <input class="t-field__input" type="text" style="font-size:var(--t-sm)" value="tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" spellcheck="false" autocomplete="off">
+            <span class="t-field__hint">Confira os quatro primeiros e os quatro últimos caracteres.</span>
+          </label>
+          <label class="t-field" style="margin-top:var(--s-6)">
+            <span class="t-field__label">Valor</span>
+            <input class="t-field__input" type="text" value="1500,000000" spellcheck="false" autocomplete="off" aria-describedby="erro-valor">
+            <span class="t-field__error" id="erro-valor">Saldo insuficiente. São necessários 1.500,0 XTZ e há 1.204,4 XTZ na carteira.</span>
+          </label>
+          <p class="demo__rule">
+            Régua grossa embaixo em vez de caixa. Erro diz o que houve e com que números —
+            nunca "algo deu errado".
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ VOZ ============ -->
+  <section class="band" id="voz">
+    <div class="shell">
+      <div class="head rise">
+        <span class="head__no">voz</span>
+        <h2 class="head__title">Como os dois falam</h2>
+        <p class="head__sub">
+          Em português, na segunda pessoa, sem entusiasmo. O público é gente cuidadosa lidando com
+          dinheiro próprio ou dos outros. Ninguém quer que a carteira dele esteja animada.
+        </p>
+      </div>
+
+      <div class="grid grid--2 rise">
+        <div class="says">
+          <div class="say say--no">
+            <span class="say__tag">não</span>
+            <p class="say__text">Ops! Algo deu errado. Tente novamente.</p>
+          </div>
+          <div class="say say--yes">
+            <span class="say__tag">sim</span>
+            <p class="say__text">Saldo insuficiente. São necessários 1.204,3 XTZ e há 1.190,0 XTZ na carteira.</p>
+          </div>
+          <div class="say say--no">
+            <span class="say__tag">não</span>
+            <p class="say__text">Submeter transação</p>
+          </div>
+          <div class="say say--yes">
+            <span class="say__tag">sim</span>
+            <p class="say__text">Enviar 12,5 XTZ</p>
+          </div>
+          <div class="say say--no">
+            <span class="say__tag">não</span>
+            <p class="say__text">Você ainda não tem nenhum pagamento. 😔</p>
+          </div>
+          <div class="say say--yes">
+            <span class="say__tag">sim</span>
+            <p class="say__text">Nenhum pagamento ainda. O primeiro sai na virada do ciclo 812.</p>
+          </div>
+        </div>
+
+        <div>
+          <p class="demo__label">Vocabulário fixo — uma palavra por conceito</p>
+          <table class="table">
+            <thead><tr><th scope="col">Use</th><th scope="col">Não use</th></tr></thead>
+            <tbody>
+              <tr><td>carteira</td><td>wallet, conta</td></tr>
+              <tr><td>endereço</td><td>address, chave pública</td></tr>
+              <tr><td>frase de recuperação</td><td>seed, mnemônica</td></tr>
+              <tr><td>senha</td><td>passphrase, PIN</td></tr>
+              <tr><td>ciclo</td><td>cycle</td></tr>
+              <tr><td>delegador</td><td>delegante, delegate</td></tr>
+              <tr><td>recompensa</td><td>reward, rendimento</td></tr>
+              <tr><td>pagamento</td><td>payout, distribuição</td></tr>
+              <tr><td>taxa da rede</td><td>fee, taxa de transação</td></tr>
+              <tr><td>comissão do baker</td><td>taxa de serviço</td></tr>
+              <tr><td>operação</td><td>transação, tx</td></tr>
+            </tbody>
+          </table>
+          <p class="demo__rule">
+            O botão que diz <em>Aprovar pagamento</em> produz a confirmação <em>Pagamento aprovado</em>.
+            O verbo não muda no meio do caminho.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ADOÇÃO ============ -->
+  <section class="band band--ink" id="adocao">
+    <div class="shell">
+      <div class="head rise">
+        <span class="head__no">adoção</span>
+        <h2 class="head__title">Como cada repositório consome isto</h2>
+        <p class="head__sub">
+          <code>tokens/tokens.json</code> é a fonte única. Web lê o CSS gerado; React Native e Compose
+          geram tema a partir do JSON. Nenhum produto redefine um valor por conta própria.
+        </p>
+      </div>
+
+      <div class="grid grid--4 rise">
+        <div class="step">
+          <h3 class="step__title">Tezzet web</h3>
+          <p class="step__text">Importar <code>tokens.css</code> no layout raiz e mapear as variáveis no <code>@theme</code> do Tailwind v4. As primitivas <code>.t-*</code> viram componentes React.</p>
+        </div>
+        <div class="step">
+          <h3 class="step__title">TAPS mobile</h3>
+          <p class="step__text">Gerar um tema tipado a partir de <code>tokens.json</code> no build. O corte vira <code>Skia</code> ou <code>react-native-svg</code>; a sombra dura vira uma <code>View</code> deslocada.</p>
+        </div>
+        <div class="step">
+          <h3 class="step__title">Núcleo comum</h3>
+          <p class="step__text">Extrair um pacote com formatação de valor, truncamento de endereço, validação de endereço e montagem de URL do explorador. Testado uma vez, usado nos dois.</p>
+        </div>
+        <div class="step">
+          <h3 class="step__title">Portão no CI</h3>
+          <p class="step__text">Falhar o build se um hex literal aparecer fora de <code>tokens.*</code>, se surgir <code>border-radius</code> diferente de zero, ou se um valor monetário for tipado como <code>number</code>.</p>
+        </div>
+      </div>
+
+      <p class="head__sub rise" style="margin-top:var(--s-12)">
+        Esta página está em português porque é o idioma do time. Publicar a suíte para a comunidade Tezos
+        exige uma passada em inglês — os nomes dos tokens já estão em inglês justamente para isso.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="shell foot__in">
+    <div>
+      <span class="mark">TEZ<span class="mark__slash" aria-hidden="true"></span>ZET</span>
+      <p style="margin-top:var(--s-3)">Suíte Tezos.Rio · tokens v1.0.0</p>
+    </div>
+    <div>
+      <p>Tezzet — guardar · TAPS — pagar</p>
+      <p style="margin-top:var(--s-1)">Fonte: <code>suite/tokens/tokens.json</code></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Revelação por rolagem. Se o navegador não suporta ou o usuário pediu menos
+// movimento, tudo já está visível — a página nunca depende do script.
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var items = document.querySelectorAll('.rise');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(function (el) { el.classList.add('is-in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) { entry.target.classList.add('is-in'); io.unobserve(entry.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.05 });
+  items.forEach(function (el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>
