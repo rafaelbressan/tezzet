@@ -9,6 +9,7 @@
 | **Issue** | BRES-40 |
 | **Depende de** | BRES-36 (spike Tauri v2 em Linux, Windows e Android) — ainda em execução nesta data |
 | **Substitui** | Nada. É a primeira ADR da suíte. |
+| **Emendas** | 2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto. Emenda anterior ao relatório do spike, conforme permitido por 3. |
 
 ---
 
@@ -134,7 +135,7 @@ O que ela custa está na seção 5, escrito sem suavizar.
 
 **Congelados em 2026-08-27, antes de o relatório de BRES-36 existir.** A prova da ordem é o histórico do git deste arquivo. Alteração posterior a esta seção só é válida se: (a) feita antes de o relatório do spike ser postado, (b) em commit separado, e (c) com justificativa escrita no próprio commit.
 
-Os portões abaixo se aplicam ao **Finalista A (Tauri v2)**. Eles não são uma lista de desejos: cada um mapeia um critério de aceite de BRES-36, para que o relatório do spike possa ser lido contra eles sem interpretação.
+Os portões abaixo se aplicam ao **Finalista A (Tauri v2)**. P8 foi acrescentado na emenda de 2026-08-27. Eles não são uma lista de desejos: cada um mapeia um critério de aceite de BRES-36, para que o relatório do spike possa ser lido contra eles sem interpretação.
 
 ### 3.1 Portões bloqueantes (todos precisam passar)
 
@@ -142,13 +143,54 @@ Os portões abaixo se aplicam ao **Finalista A (Tauri v2)**. Eles não são uma 
 |---|---|---|
 | **P1** | Um código, três plataformas | Build verde **e app funcionando** em Linux, Windows e Android — 3 de 3, do mesmo código-fonte. Fork de código por plataforma conta como falha. |
 | **P2** | Operação real na cadeia | Pelo menos **2 hashes** de operação injetada em Ghostnet, um de alvo desktop e um do **Android**, cada um verificável num explorador público. Hash não conferível = não conta. |
-| **P3** | A fronteira da chave se sustenta | Demonstração de que semente e chave privada não aparecem em nenhum ponto do lado JavaScript, com **método descrito** (inspeção do bundle, instrumentação do IPC, dump de heap do webview — algo reproduzível). Afirmação sem método = **não atendido**. |
-| **P4** | Dependências de cripto mantidas | O núcleo Rust se monta com crates **mantidas** — critério: último release ≤ 12 meses **ou** commit no repositório ≤ 6 meses. `tezos_crypto_rs` e `tezos_data_encoding` estão parados há ~2 anos; depender deles reprova P4. |
-| **P5** | Armazenamento seguro no Android | Stronghold guardando a semente cifrada **e** Biometric destravando, funcionando no Android. O Barcode Scanner é desejável (paridade com o app atual) mas **não** bloqueia. |
+| **P3** | A fronteira da chave se sustenta | **Cinco itens em conjunção — P3.a a P3.e da seção 3.1.1. Todos precisam passar.** Não se prova que a chave não saiu; prova-se que não existe caminho por onde ela sairia. |
+| **P4** | Dependências de cripto mantidas | O núcleo Rust se monta com crates **mantidas** — critério: último release ≤ 12 meses **ou** commit no repositório ≤ 6 meses. `tezos_crypto_rs` e `tezos_data_encoding` estão parados há ~2 anos; depender deles reprova P4. **Conjunto mínimo e as duas lacunas nomeadas na seção 3.1.2.** |
+| **P5** | Armazenamento seguro no Android | **Vínculo criptográfico com o Keystore, demonstrado por falha — seção 3.1.3.** Biometria que devolve booleano não atende. Barcode Scanner é desejável e **não** bloqueia. |
 | **P6** | Custo de operação no runtime real (WSL) | Build limpo ≤ **30 min** por alvo e incremental ≤ **5 min**; binário desktop ≤ **40 MB**; APK ≤ **50 MB**. Nenhum passo manual não documentável em cada build. |
 | **P7** | Relatório honesto | O relatório tem uma seção do que foi **difícil ou frágil**. Um relatório só com sucessos não permite decidir e reprova P7 por si só. |
+| **P8** | Derivação conferida contra implementação independente | Partindo de mnemônica de teste publicada, derivar `m/44'/1729'/0'/0'` e mostrar que `tz1...` e `edpk...` batem com `InMemorySigner` do Taquito **ou** `octez-client`. Conferir contra si mesmo não conta. |
 
 Os limiares de P6 são generosos de propósito: eles não existem para escolher o framework mais rápido, existem para reprovar um desfecho absurdo. Se um build Android limpo levar duas horas no WSL, isso é um imposto diário sobre a squad e precisa aparecer na decisão em vez de virar folclore.
+
+#### 3.1.1 P3 em detalhe — os cinco itens
+
+Redação anterior reprovada por Tezos Core & Crypto em 2026-08-27, e o motivo é bom: "a semente não aparece em nenhum ponto do lado JavaScript" é uma proposição universal negativa, e dump de heap só prova o instante amostrado. Grep de bundle prova menos ainda — a semente é dado de runtime, não literal de build, então bundle limpo é compatível com vazamento total. Listar métodos como alternativa faz o portão aceitar a evidência mais fraca da lista. São conjunção.
+
+| | Item |
+|---|---|
+| **P3.a** | **Enumeração exaustiva da superfície IPC.** Lista de todo `#[tauri::command]` exposto e, para cada um, o tipo de retorno. Nenhum comando retorna, em nenhuma variante do seu tipo — **incluindo o ramo `Err`** —, bytes de semente, mnemônica, chave privada ou material estendido BIP-32. É o único item exaustivo; os outros amostram. |
+| **P3.b** | **Nenhum tipo que carrega segredo implementa `Serialize`.** Tudo que atravessa o IPC do Tauri passa por `serde`, e o `String`/`Vec` intermediário da serialização é cópia que `zeroize` não alcança. Se o tipo não é serializável, ele não atravessa — garantido pelo compilador, não pela disciplina de quem escreve. |
+| **P3.c** | **Caminho de erro e de log auditados.** O vazamento típico não é o caminho feliz: é `Debug`/`Display` de um erro que carrega a semente, mensagem de `panic`, ou build de dev. `Debug` implementado à mão com redação (`derive` proibido em tipo de segredo), erro que cruza a fronteira é enum fechado sem payload, e a demonstração inclui **uma operação deliberadamente falha**, mostrando o que chega ao JS. |
+| **P3.d** | **Teste positivo do fluxo real** — destravar → derivar → assinar → injetar, com os payloads IPC serializados para log e asserção de que nenhum contém os 64 bytes da semente, a mnemônica ou o `edsk`. Fluxo real, não caminho de demonstração. |
+| **P3.e** | **Regressão de CI, não demonstração única.** O teste de P3.d entra no CI e falha quando um comando novo passa a devolver segredo. Fronteira que só vale na data do spike não é fronteira. |
+
+Dump de heap do webview entra como corroboração opcional e **nunca** como justificativa de P3: resultado negativo dele não é evidência.
+
+#### 3.1.2 P4 em detalhe — conjunto mínimo e as duas lacunas
+
+Conjunto mínimo do spike: `bip39`, `ed25519-dalek`, `blake2`, `bs58` (com feature `check`), `argon2`, `zeroize`, mais `sha2` e `hmac`, que entram no conjunto auditado por estarem no caminho da chave.
+
+Duas lacunas que a lista original tinha e que empurravam para reimplementação por omissão:
+
+- **Derivação.** `bip39` dá a semente, `ed25519-dalek` assina a partir de 32 bytes, e **nenhum dos dois faz `m/44'/1729'/0'/0'`** — para Ed25519 isso é **SLIP-0010**, cadeia HMAC-SHA512, só derivação endurecida. P4 exige que o relatório **nomeie a crate de derivação**. Derivação escrita à mão só passa com os **vetores oficiais do SLIP-0010 rodando no CI** e revisão de Tezos Core & Crypto.
+- **Fonte de entropia.** O relatório diz **nominalmente qual RNG** produziu os 128/256 bits da mnemônica no build Android (`getrandom`/CSPRNG do sistema). É o único ponto onde um erro produz carteira previsível e silenciosa.
+
+Duas notas sem mudança de limiar: a lista é o mínimo do **spike**, não o conjunto auditado final — `tz2`/`tz3` acrescentam `k256`/`p256` depois, com normalização low-S; e depender de `zeroize` não é zerar: a forma verificável é o tipo (`ZeroizeOnDrop`, sem `Clone`, sem `Copy`, sem `Serialize` — o mesmo requisito de P3.b por outro lado).
+
+**Carve-out de R4:** base58check de endereço e chave pública **não é forjamento e vive do lado Rust**, porque é o Rust que devolve `tz1...`/`edpk...` ao JS. `bs58` mais a tabela de prefixos é pequeno e testável — contra vetor conhecido (P8), nunca contra si mesmo.
+
+#### 3.1.3 P5 em detalhe — vínculo criptográfico, demonstrado por falha
+
+Redação anterior reprovada pelo mesmo motivo estrutural: "Stronghold guardando e Biometric destravando" é satisfeito por uma trava que não é criptográfica. Stronghold é snapshot cifrado em arquivo com chave derivada de senha em espaço de usuário — não ganha respaldo de hardware por si. E se o plugin de biometria devolver apenas um booleano, P5 passa com um `if (authOk) mostrarTela()`, com a chave ainda decifrável por quem tem arquivo e senha.
+
+Isso é o achado do Tezzet — "a trava da carteira é só visibilidade de layout" — reimportado para a stack nova com nome melhor. Um portão que não exclui o defeito que motivou o projeto não é portão.
+
+- A chave do snapshot é envelopada por chave do **Android Keystore** criada com `setUserAuthenticationRequired(true)` e `setInvalidatedByBiometricEnrollment(true)`. Falhar a biometria faz o *unwrap* falhar — não faz uma tela não abrir.
+- **Demonstração aceita é negativa:** matar o app, negar o prompt biométrico e mostrar **falha de decifragem**. Complementarmente, puxar o snapshot por `adb` e mostrá-lo opaco sem a chave do Keystore.
+- O relatório diz o nível de segurança real do device (`KeyInfo.getSecurityLevel()`; StrongBox via `setIsStrongBoxBacked` quando houver). **StrongBox não bloqueia — TEE basta.** Bloqueante é o relatório **dizer qual dos dois**.
+- **Sal e parâmetros do Argon2id escritos.** Se o spike usar `Builder::with_argon2(&salt_path)` do exemplo da documentação, o relatório diz **como o arquivo de sal é criado e com que entropia**. Sal constante é o `scryptSync(password, 'salt', 32)` do TAPS renascido, desta vez com a nossa assinatura embaixo. Parâmetros justificados para o alvo mais fraco (Android mediano), não os default.
+- **Alternativa honesta, também aceita:** Stronghold destravado só por senha com Argon2id, e a biometria documentada como **conveniência que não guarda nada** — desde que esteja escrito assim e o modelo de ameaça diga que ladrão com aparelho destravado está fora dele. O que se reprova é a terceira via: biometria que parece criptográfica e não é.
+- **Delimitação permanente:** o Barcode Scanner fica fora do perímetro da chave porque só lê **endereço e pedido de pagamento**. Ler mnemônica ou chave privada por QR está fora de escopo em definitivo.
 
 ### 3.2 Critérios de eliminação (qualquer um reprova o Finalista A)
 
@@ -157,7 +199,7 @@ Os limiares de P6 são generosos de propósito: eles não existem para escolher 
 | **K1** | Android não builda, ou só builda com fork de código-fonte. |
 | **K2** | Nenhuma operação injetada em Ghostnet a partir do Android. |
 | **K3** | Stronghold indisponível ou instável no Android. |
-| **K4** | A chave precisa transitar pelo lado JavaScript em algum ponto do fluxo real de assinatura. |
+| **K4** | Material de chave — semente, mnemônica, chave privada, material estendido BIP-32 — sai do Rust para o lado JavaScript em algum ponto do fluxo real de assinatura. **Delimitação pré-registrada: K4 é sobre material de chave saindo, não sobre senha entrando.** A senha do usuário é digitada na UI e atravessa JS → Rust nos **dois** finalistas, logo não discrimina entre eles; fica como risco residual comum, com o requisito de atravessar uma vez, como parâmetro do comando de destravar, sem permanecer em estado do JS. |
 | **K5** | A camada de cadeia só funciona dependendo de crate Tezos abandonada. |
 
 K4 é o mais importante e merece ser dito por extenso: **se a fronteira vaza, a razão principal para adotar Rust deixa de existir.** Todo o custo da seção 5 é pago em troca dessa fronteira. Sem ela, o Finalista B faz o mesmo trabalho sem cobrar Rust.
@@ -173,11 +215,11 @@ Registrado para que não seja usado como argumento depois:
 
 ### 3.4 Regra de decisão (a decisão é uma função destes portões, assinada antes do dado)
 
-- **R1 — Aprovar Tauri.** P1–P7 todos atendidos e nenhum K disparado → recomendar **Tauri v2 + núcleo Rust** para os dois produtos: Tezzet (desktop + mobile), TAPS desktop local-first e TAPS companion mobile.
+- **R1 — Aprovar Tauri.** P1–P8 todos atendidos e nenhum K disparado → recomendar **Tauri v2 + núcleo Rust** para os dois produtos: Tezzet (desktop + mobile), TAPS desktop local-first e TAPS companion mobile.
 - **R2 — Rejeitar Tauri.** Qualquer K disparado, ou P3 ou P5 não atendidos → **Finalista B**: React Native + Expo com módulo de chave nativo por plataforma; TAPS desktop vira serviço local em Node empacotado por sistema operacional.
 - **R3 — Falha parcial de plataforma.** P1 verde em Linux e Android mas falho no Windows (ou o inverso entre desktops) → **não decidir agora**. Devolver ao spike com escopo reduzido ao alvo que falhou e prazo definido. Windows é alvo real, não opcional.
 - **R4 — P4 falho por motivo restrito.** Se as crates genéricas (`ed25519-dalek`, `bip39`, `blake2`, `bs58`, `argon2`, `zeroize`) bastam para chave e armazenamento, e a única lacuna é encoding/forjamento Tezos em Rust, **P4 é considerado atendido** — porque a proposta já deixa forjamento no Taquito, do lado TypeScript. Se, e só se, o desenho exigir reimplementar encoding Tezos em Rust, P4 reprova e vale R2.
-- **R5 — Evidência insuficiente.** Se o relatório não permitir avaliar P1–P7 → **não decidir**. Devolver o spike com a lista do que falta. Nesta ADR, adiar é um desfecho válido; decidir sem evidência não é.
+- **R5 — Evidência insuficiente.** Se o relatório não permitir avaliar P1–P8 → **não decidir**. Devolver o spike com a lista do que falta. Nesta ADR, adiar é um desfecho válido; decidir sem evidência não é.
 - **R6 — Portão humano.** Em qualquer desfecho, a squad recomenda e **Rafael decide**. Nenhuma issue de produto vai para `todo` e o estágio 3 não é promovido antes dessa aprovação.
 
 ---
@@ -262,6 +304,18 @@ Estes não dependem de qual finalista vencer, e a ADR os fixa agora porque são 
 4. **Nada de `|| 0` em campo vindo de API externa.** Campo ausente é erro alto, não zero silencioso.
 5. **Nenhum segredo tem valor padrão.** Variável ausente, processo recusa subir.
 6. **Nenhuma distribuição de pagamento sem idempotência provada** — teste que roda a mesma distribuição duas vezes e demonstra que a segunda não envia.
+7. **Watermark é argumento obrigatório e tipado — não existe default.** O núcleo recusa assinar bytes arbitrários. Assinar um "texto" com watermark de operação é a forma clássica de transformar assinatura de mensagem em transferência, e P2 só prova o watermark de operação por consequência.
+8. **A interface `Signer` nasce com duas implementações: núcleo local e `octez-signer` remoto.** Motivo na seção 7.1 abaixo.
+
+### O buraco que nenhum portão cobre — chave quente no desktop
+
+Levantado por Tezos Core & Crypto em 2026-08-27, e registrado aqui porque é **ortogonal aos dois finalistas**: P5 é Android, e o armazenamento em **desktop** não é gatilhado por portão nenhum — é justamente onde vai morar a chave de payout do TAPS.
+
+A tese local-first melhora muito o modelo atual (chave em linha de banco multi-tenant, com a "segunda camada" guardada na mesma linha). Mas não resolve o problema de fundo: **um agendador de payout que roda desatendido não pode exigir humano para destravar, logo a chave precisa ser utilizável sem humano — ou seja, quente.** Trocar "quente no Postgres" por "quente no disco do baker" é progresso real e continua sendo o modelo de maior risco possível para um sistema que move fundos.
+
+O padrão do ecossistema para payout é **remote signer (`octez-signer`) ou Ledger**, com o serviço nunca vendo a chave. Como o requisito 1 acima manda tudo passar pela interface `Signer`, um signer remoto é só outra implementação dela — daí o requisito 8. Com as duas implementações desde o começo, a abstração fica provada em vez de presumida, e o baker avesso a risco tem caminho. **A chave embutida vira modo degradado, opt-in e documentado como tal**, não o default silencioso.
+
+Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto exerce veto quando o código chegar.
 
 ---
 
@@ -274,12 +328,12 @@ Estes não dependem de qual finalista vencer, e a ADR os fixa agora porque são 
 **Plano para fechar, em três passos:**
 
 1. **Conseguir acesso a macOS.** Duas formas: uma máquina (Mac mini de série M) ou um runner macOS hospedado em CI. As duas envolvem **gasto**, portanto é decisão de Rafael, não da squad. Some-se a conta Apple Developer, obrigatória para publicar (US$ 99/ano).
-2. **Rodar o mesmo roteiro do spike nos dois alvos Apple** — a mesma lista de P1 a P6, com os mesmos limiares, produzindo hashes de Ghostnet a partir do iOS.
+2. **Rodar o mesmo roteiro do spike nos dois alvos Apple** — a mesma lista de P1 a P8, com os mesmos limiares, produzindo hashes de Ghostnet a partir do iOS.
 3. **Prazo: antes do início do estágio 5.** BRES-49 e BRES-48 dependem de empacotamento por plataforma; entrar no estágio 5 sem o lado Apple resolvido significa descobrir o problema no ponto mais caro possível.
 
 **Até lá, três regras.** Nenhuma issue declara suporte a iOS ou macOS. Nenhum critério de aceite é dado como atendido em alvo Apple sem build verificado. E qualquer plano de publicação em loja Apple é escalado, não presumido.
 
-**Se o iOS se mostrar inviável depois de existir um Mac:** ver RV-3 na seção 9. A decisão é parcialmente reversível por desenho, e essa reversibilidade é a razão do requisito 7.1.
+**Se o iOS se mostrar inviável depois de existir um Mac:** ver RV-3 na seção 9. A decisão é parcialmente reversível por desenho, e essa reversibilidade é a razão do requisito 1 da seção 7.
 
 ---
 
@@ -287,7 +341,7 @@ Estes não dependem de qual finalista vencer, e a ADR os fixa agora porque são 
 
 **Janela.** A decisão é barata de reverter **até o fim do estágio 4** — o primeiro payout completo ponta a ponta em Ghostnet (BRES-44 e BRES-46). Antes disso, trocar de framework custa a camada de UI e o wrapper. Depois, custa também empacotamento, migrations, matriz de QA e documentação de instalação. Passado o estágio 5, reverter deixa de ser reversão e vira uma segunda reescrita.
 
-**O que torna a reversão possível** é o requisito 7.1: o núcleo de chave atrás da interface `Signer` e a camada de cadeia em TypeScript com Taquito. Sob esse desenho, trocar o shell é trocar a casca. Se esse requisito for violado em algum ponto da implementação, a janela de reversão fecha antes do prazo e isso precisa ser reportado, não descoberto.
+**O que torna a reversão possível** é o requisito 1 da seção 7: o núcleo de chave atrás da interface `Signer` e a camada de cadeia em TypeScript com Taquito. Sob esse desenho, trocar o shell é trocar a casca. Se esse requisito for violado em algum ponto da implementação, a janela de reversão fecha antes do prazo e isso precisa ser reportado, não descoberto.
 
 **Gatilhos que abrem a discussão de reversão:**
 
@@ -326,7 +380,7 @@ Estes não dependem de qual finalista vencer, e a ADR os fixa agora porque são 
 Esta seção será preenchida quando BRES-36 entregar o relatório, aplicando a regra de decisão de 3.4 sem alterá-la.
 
 - [ ] Relatório do spike recebido em: `____`
-- [ ] Avaliação portão a portão: P1 `__` P2 `__` P3 `__` P4 `__` P5 `__` P6 `__` P7 `__`
+- [ ] Avaliação portão a portão: P1 `__` P2 `__` P3 `__` P4 `__` P5 `__` P6 `__` P7 `__` P8 `__`
 - [ ] Eliminações disparadas: `____`
 - [ ] Regra aplicada: `____`
 - [ ] Decisão em uma frase: `____`
