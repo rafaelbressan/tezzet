@@ -9,7 +9,7 @@
 | **Issue** | BRES-40 |
 | **Depende de** | BRES-36 (spike Tauri v2 em Linux, Windows e Android) — ainda em execução nesta data |
 | **Substitui** | Nada. É a primeira ADR da suíte. |
-| **Emendas** | 2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto. Emenda anterior ao relatório do spike, conforme permitido por 3. |
+| **Emendas** | 2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto.<br>2026-08-27 — Apple retirada do escopo e ausência de usuários em produção confirmada, ambas por decisão direta de Rafael. Emendas anteriores ao relatório do spike, conforme permitido por 3. |
 
 ---
 
@@ -23,11 +23,13 @@ O motivo de escrever os critérios primeiro é simples: critério escrito depois
 
 ## Aviso que precisa estar na primeira página
 
-**Esta ADR vai decidir sobre cinco plataformas tendo verificado três.**
+**Os alvos da suíte são três: Linux, Windows e Android. Apple está fora do escopo.**
 
-Não há máquina macOS disponível para a squad. Sem Mac não se builda iOS **nem** macOS desktop. Os alvos que o spike verifica de fato são **Linux, Windows e Android**. Tudo que esta ADR vier a afirmar sobre Apple é pesquisa, não verificação, e está registrado como risco aberto na seção 8 — com plano, prazo e custo.
+Decisão de Rafael em 2026-08-27, em resposta à recomendação da squad: sem máquina macOS por agora, e iOS e macOS desktop saem do escopo em vez de ficarem pendurados como risco aberto. Isso é melhor que adiar — um alvo que ninguém consegue verificar e que continua listado vira critério de aceite insatisfazível espalhado por várias issues.
 
-Ninguém deve ler esta ADR e escrever "suporta iOS" em lugar nenhum.
+**Consequência:** esta ADR decide sobre exatamente os alvos que o spike verifica. Nenhum critério de aceite da suíte menciona iOS ou macOS. A condição de reentrada está na seção 8.
+
+Ninguém deve escrever "suporta iOS" em lugar nenhum — nem como pendência.
 
 ---
 
@@ -44,9 +46,9 @@ O estado verificado:
 
 Estas três mudam o espaço de decisão e precisam aparecer explicitamente, porque várias conclusões abaixo dependem delas:
 
-**Não há usuários em produção em nenhum dos dois sistemas.** Nenhuma compatibilidade a preservar, nenhuma migração obrigatória, nenhuma janela de manutenção, nenhuma urgência de segurança por exposição real. Decorre daí, diretamente, que **consertar o build e o JWT do TAPS atual não vale o esforço**: são correções em código que a reescrita passa por cima, e ninguém depende delas hoje. Se esta premissa for falsa — se existir um baker rodando TAPS em produção — ela dispara o gatilho de reversão RV-5 da seção 9 e a urgência de tudo muda.
+**Não há usuários em produção em nenhum dos dois sistemas.** Nenhuma compatibilidade a preservar, nenhuma migração obrigatória, nenhuma janela de manutenção, nenhuma urgência de segurança por exposição real. Decorre daí, diretamente, que **consertar o build e o JWT do TAPS atual não vale o esforço**: são correções em código que a reescrita passa por cima, e ninguém depende delas hoje. **Confirmado diretamente por Rafael em 2026-08-27**, em resposta à pergunta explícita: não há baker rodando TAPS em produção hoje. Deixa de ser premissa herdada e passa a ser fato declarado pelo dono do produto. O gatilho RV-5 da seção 9 permanece registrado para o caso de a situação mudar.
 
-**Não há máquina macOS.** Ver o aviso da primeira página.
+**Apple fora do escopo.** Não há máquina macOS, e Rafael decidiu em 2026-08-27 retirar iOS e macOS do escopo em vez de mantê-los como pendência. Ver o aviso da primeira página e a seção 8.
 
 **Runtime WSL** para toda a squad, por enquanto. Isso não é detalhe: é o ambiente onde os tempos de build e a cadeia de ferramentas Android são medidos, e entra como portão P6.
 
@@ -97,7 +99,7 @@ O número que decide é o tamanho do time. A squad tem cinco papéis e um humano
 
 E há evidência histórica direta dentro deste próprio repositório sobre o que acontece com um app nativo de plataforma única mantido por um time pequeno: o Tezzet ficou parado em `targetSdkVersion 28` e no protocolo Babylon durante seis anos, até deixar de compilar por causa do desligamento de um repositório de artefatos. Multiplicar isso por três plataformas não melhora o desfecho.
 
-Ela permanece disponível como **reversão parcial** (seção 9): se o alvo iOS se mostrar inviável no framework escolhido, o mobile pode virar nativo sem que o desktop mude.
+Ela permanece disponível como **reversão parcial** (RV-3): se Apple voltar ao escopo e o alvo iOS se mostrar inviável no framework escolhido, o mobile pode virar nativo sem que o desktop mude.
 
 ### 2.3 Rejeitada — web/PWA apenas
 
@@ -208,8 +210,8 @@ K4 é o mais importante e merece ser dito por extenso: **se a fronteira vaza, a 
 
 Registrado para que não seja usado como argumento depois:
 
-- **iOS e macOS não verificados** não reprovam nada. São risco aberto (seção 8), não portão. Reprovar o Tauri por não ter Mac seria reprovar qualquer alternativa pelo mesmo motivo.
-- **Ausência de caso público de app Tauri v2 publicado na App Store** não reprova. Entra como peso no risco de iOS, e a ausência do dado é ela própria um dado — o spike deve dizer se procurou e não achou.
+- **iOS e macOS** não entram em portão nenhum: estão **fora do escopo** por decisão de Rafael (seção 8). Reprovar o Tauri por causa de Apple seria reprovar qualquer alternativa pelo mesmo motivo, já que nenhuma delas é verificável em Apple hoje.
+- **Ausência de caso público de app Tauri v2 publicado na App Store** não reprova, e com Apple fora do escopo deixou de ter peso na decisão. O dado, se o spike o produzir, é arquivado para a eventual reentrada.
 - **Aproveitamento de código do TAPS** não é critério, e a seção 6 mostra por quê: nos dois finalistas o TypeScript continua dono da camada de cadeia, então o aproveitamento é praticamente o mesmo. Usar aproveitamento para escolher entre A e B seria um argumento vazio.
 - **Preferência estética, elegância da arquitetura e "o que é mais moderno"** não são critérios.
 
@@ -253,7 +255,9 @@ Esta seção existe porque uma ADR que só lista benefícios não é uma ADR.
 
 **O contra-argumento honesto, e por que ele não anula o custo:** a quantidade de Rust é pequena e **limitada por desenho**. O núcleo de chave é gerar, derivar, guardar, assinar — algo entre 1.500 e 2.500 linhas que mudam raramente, porque BIP-39 e Ed25519 não mudam a cada upgrade de protocolo. É deliberadamente o Taquito, do lado TypeScript, que absorve a parte que muda toda hora. Isso torna o custo pagável. Não o torna zero, e ele não deve ser apresentado como zero em lugar nenhum.
 
-**O que também precisa ser dito sobre o Finalista B:** ele não é gratuito. Ele troca Rust por **dois módulos nativos** de chave — Kotlin para Keystore/StrongBox e Swift para Keychain/Secure Enclave — mais WebCrypto na web. São três implementações do ciclo de vida da chave em vez de uma, e a auditoria precisa cobrir as três. A pergunta que os portões respondem não é "Rust custa caro?", é **"a fronteira única de Rust custa menos que três fronteiras nativas?"**
+**O que também precisa ser dito sobre o Finalista B:** ele não é gratuito. Ele troca Rust por **módulos nativos** de chave — Kotlin para Keystore/StrongBox, Swift para Keychain/Secure Enclave se Apple existir, mais WebCrypto na web. São várias implementações do ciclo de vida da chave em vez de uma, e a auditoria precisa cobrir todas.
+
+**Emenda de 2026-08-27, registrada porque anda contra a proposta em avaliação:** retirar Apple do escopo **barateia o Finalista B mais que o A**. B deixa de precisar de Swift e cai de três implementações de chave para duas (Kotlin e WebCrypto); A economiza um alvo de build, que é menos. Isso estreita a diferença de custo entre os dois, e fica escrito aqui, antes do relatório do spike, para que não seja descoberto depois como argumento conveniente. **Não muda portão nenhum** — a decisão continua sendo função de P1 a P8 e de K1 a K5. A pergunta que os portões respondem não é "Rust custa caro?", é **"a fronteira única de Rust custa menos que três fronteiras nativas?"**
 
 ---
 
@@ -319,21 +323,22 @@ Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto
 
 ---
 
-## 8. Risco aberto: iOS e macOS não verificados
+## 8. Apple fora do escopo — decisão, e a condição de reentrada
 
-**O risco.** Esta ADR decide sobre cinco alvos tendo verificado três. Sobre Apple, tudo que se pode afirmar vem de pesquisa: se os plugins declaram suporte, o que a App Store exige de um app com carteira cripto, e se existe caso público de app Tauri v2 publicado lá. Declaração de suporte em documentação de plugin não é build verde.
+**A decisão.** Rafael, em 2026-08-27: iOS e macOS desktop saem do escopo da suíte por agora. Não é adiamento com prazo; é retirada, com condição de reentrada escrita abaixo.
 
-**Impacto imediato registrado.** BRES-49 (companion mobile do TAPS) tem como critério de aceite "publicável em iOS **e** Android, com build verificado nos dois". **Esse critério é insatisfazível hoje** e permanece assim enquanto não houver Mac. Ele não deve ser marcado como atendido por analogia com o Android.
+**Por que retirar é melhor que adiar.** Um alvo que ninguém consegue verificar e que continua listado nos critérios de aceite não fica parado: ele vira trabalho que o QA não pode aprovar e que alguém eventualmente marca como atendido por analogia com o Android. Era exatamente o que estava para acontecer em BRES-49, cujo critério "publicável em iOS **e** Android, com build verificado nos dois" era insatisfazível na data em que foi escrito.
 
-**Plano para fechar, em três passos:**
+**O que muda, concretamente:**
 
-1. **Conseguir acesso a macOS.** Duas formas: uma máquina (Mac mini de série M) ou um runner macOS hospedado em CI. As duas envolvem **gasto**, portanto é decisão de Rafael, não da squad. Some-se a conta Apple Developer, obrigatória para publicar (US$ 99/ano).
-2. **Rodar o mesmo roteiro do spike nos dois alvos Apple** — a mesma lista de P1 a P8, com os mesmos limiares, produzindo hashes de Ghostnet a partir do iOS.
-3. **Prazo: antes do início do estágio 5.** BRES-49 e BRES-48 dependem de empacotamento por plataforma; entrar no estágio 5 sem o lado Apple resolvido significa descobrir o problema no ponto mais caro possível.
+- Os alvos da suíte são **Linux, Windows e Android**. Os três são verificáveis hoje.
+- **BRES-49** (companion mobile do TAPS) passa a ser **Android**, com o critério de build verificado valendo só para ele.
+- Nenhum critério de aceite, em nenhuma issue, menciona iOS ou macOS.
+- A pesquisa sobre Apple que BRES-36 já produzir — suporte declarado dos plugins, exigências da App Store, existência de caso público de app Tauri v2 publicado — **é arquivada, não acionada**. Ela serve à reentrada, se houver.
 
-**Até lá, três regras.** Nenhuma issue declara suporte a iOS ou macOS. Nenhum critério de aceite é dado como atendido em alvo Apple sem build verificado. E qualquer plano de publicação em loja Apple é escalado, não presumido.
+**Condição de reentrada.** Apple volta ao escopo quando as duas coisas forem verdade: existir acesso a macOS (máquina ou runner hospedado em CI, mais conta Apple Developer a US$ 99/ano — gasto, portanto decisão de Rafael), **e** houver demanda de produto que justifique o alvo. Nesse dia, o roteiro é o mesmo: rodar P1 a P8 nos alvos Apple, com os mesmos limiares, produzindo hashes de Ghostnet a partir do iOS.
 
-**Se o iOS se mostrar inviável depois de existir um Mac:** ver RV-3 na seção 9. A decisão é parcialmente reversível por desenho, e essa reversibilidade é a razão do requisito 1 da seção 7.
+**O que preserva a opção de voltar** é o requisito 1 da seção 7 — núcleo de chave atrás da interface `Signer`, camada de cadeia em TypeScript com Taquito. Sob esse desenho, acrescentar um alvo é acrescentar um shell, não reescrever o núcleo. Retirar Apple do escopo hoje **não** fecha a porta; violar o requisito 1 fecharia.
 
 ---
 
@@ -349,7 +354,7 @@ Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto
 |---|---|---|
 | **RV-1** | Build de alguma plataforma alvo quebrado por mais de duas semanas por causa do framework, não do nosso código. | Total, para o Finalista B. |
 | **RV-2** | Plugin essencial (Stronghold ou Biometric) abandonado, ou incompatível com uma versão obrigatória de sistema operacional. | Total. |
-| **RV-3** | Com Mac disponível, o alvo iOS se mostra inviável no framework escolhido. | **Parcial:** mobile migra para nativo ou RN+Expo; desktop permanece. O núcleo de chave é o mesmo nos dois casos. |
+| **RV-3** | Apple volta ao escopo (seção 8) e o alvo iOS se mostra inviável no framework escolhido. | **Parcial:** mobile migra para nativo ou RN+Expo; desktop permanece. O núcleo de chave é o mesmo nos dois casos. Enquanto Apple estiver fora do escopo, este gatilho está dormente. |
 | **RV-4** | Exigência de loja que bloqueie a publicação e não tenha caminho de contorno. | Parcial ou total conforme a exigência. Escalado a Rafael. |
 | **RV-5** | Descobre-se que existe baker rodando TAPS em produção. | Nenhuma reversão de stack, mas **muda a urgência de tudo**: as correções de segurança do sistema atual (JWT forjável, pagamento duplicado por retry) deixam de ser "não vale o esforço" e viram trabalho imediato, em paralelo com a reescrita. |
 
@@ -361,7 +366,7 @@ Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto
 
 **Tezos Chain & Payouts.** Praticamente não é afetado pelo desfecho, e isso é de propósito: nos dois finalistas o TypeScript continua dono da camada de cadeia. O trabalho dele — constantes lidas de `/context/constants`, TzKT com paginação e sem `|| 0`, Adaptive Issuance com `staked_balance` separado de `delegated_balance`, `tz4`, `estimate.batch()`, idempotência de lote — é o mesmo nos dois casos e pode começar assim que o estágio 3 for promovido.
 
-**Tezzet & TAPS Apps.** É quem paga a diferença entre A e B. Sob A, precisa de Rust suficiente para operar a fronteira (não para escrever cripto — isso é do Core & Crypto). Sob B, precisa de Kotlin e Swift para os módulos nativos, e de uma resposta separada para o desktop.
+**Tezzet & TAPS Apps.** É quem paga a diferença entre A e B. Sob A, precisa de Rust suficiente para operar a fronteira (não para escrever cripto — isso é do Core & Crypto). Sob B, precisa de Kotlin para o módulo nativo do Android — Swift sai junto com o escopo Apple — e de uma resposta separada para o desktop.
 
 **Suite Design & Journey.** `suite/tokens/tokens.json` é neutro de plataforma por desenho, e é isso que faz o desfecho não afetar o trabalho dele. O que muda é o alvo de geração de tema: CSS e Tailwind para o shell web do Finalista A; tema de React Native para o B. O kit compartilhado — valor em XTZ, endereço truncado, hash com link, badge de status, número de ciclo, seletor de rede — é o mesmo nos dois.
 
@@ -369,7 +374,7 @@ Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto
 
 1. **A matriz de plataforma vira parte da definição de pronto.** "Os testes unitários passaram" nunca é entrega validada nestes projetos. O que vale é build verificado em cada alvo, payout ponta a ponta em Ghostnet, e teste de idempotência rodando a mesma distribuição duas vezes.
 2. **Sob o Finalista A, ganha-se um teste que hoje não existe em lugar nenhum:** o teste de fronteira — a chave não cruza para o JavaScript. Ele precisa virar regressão permanente no CI, não uma demonstração feita uma vez no spike. É o que impede K4 de acontecer por descuido seis meses depois.
-3. **A matriz cresce assimetricamente.** Sob A: três alvos verificáveis hoje, dois adiados. Sob B: dois alvos mobile e um desktop empacotado à parte. Em ambos, iOS fica de fora até existir Mac.
+3. **A matriz é fechada e pequena, e isso é uma vantagem.** Três alvos, todos verificáveis, sem alvo pendurado que o QA não possa aprovar. Sob A: Linux, Windows e Android do mesmo código. Sob B: dois alvos mobile mais um desktop empacotado à parte, o que dá ao QA uma matriz maior que a de A, não menor.
 
 **O que precisa ser auditado, em qualquer desfecho:** o núcleo de chave (geração de entropia, BIP-39 com checksum e wordlist, derivação `m/44'/1729'/0'/0'`, watermark correto por tipo de payload assinado); a cifra de armazenamento (AEAD, KDF Argon2id, comparação em tempo constante); a fronteira do `Signer`; e a cadeia de suprimento — npm sempre, crates.io também sob o Finalista A. Auditoria externa antes de qualquer versão pública que segure chave de usuário.
 
