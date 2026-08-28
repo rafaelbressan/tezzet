@@ -9,7 +9,8 @@
 | **Origem** | Mandato escrito pelo Tezos Suite Lead em BRES-37, autorizado por Rafael no thread de revisão do spike BRES-36 (`01a045b8`) |
 | **Vale para** | Tezzet e TAPS. Alvos: **Linux, Windows e Android** (ADR-0001 §8 — Apple fora do escopo) |
 | **Relação com a ADR-0001** | Independente. Esta especificação é escrita em **primitivas e parâmetros**, não em linguagem. Ela vale se a stack for Rust e vale se não for. Nomes de biblioteca aparecem só na seção 12, rotulados como *implementação de referência candidata*. |
-| **O que ela NÃO decide** | A custódia da chave de payout do TAPS. Isso está escalado para Rafael. A seção 11 escreve a recomendação e para aí. |
+| **Emendas** | 2026-08-28 — §11 (custódia do payout do TAPS) e §13 (auditoria externa) reescritas após decisão de Rafael no thread do BRES-37. Nenhum parâmetro criptográfico mudou. |
+| **O que ela NÃO decide** | Nada que estivesse pendente na passada 1 continua pendente. O que segue aberto está na §14. |
 
 ---
 
@@ -660,25 +661,56 @@ Escrito assim para que uma revisão possa ser feita com esta lista na mão.
 
 ---
 
-## 11. Chave quente do TAPS — recomendação, não decisão
+## 11. Custódia da chave de payout do TAPS — **DECIDIDO**
 
-**Esta seção recomenda e para. A decisão de custódia é de Rafael** (ADR-0001 §7 e mandato do Suite Lead em BRES-37).
+| | |
+|---|---|
+| **Decisão** | **Opção A — `octez-signer` em host separado, com allow-list de operação.** O backend do TAPS **nunca** vê a chave de payout |
+| **Quem decidiu** | Rafael, em 2026-08-28, no thread do BRES-37 |
+| **O que fica descartado** | Chave `edsk` no host do TAPS (opção B) e a variante com teto de valor (opção C) |
+| **Efeito na ADR-0001** | Fecha o buraco declarado em §7 ("chave quente no desktop"). O requisito 8 da §7 deixa de ser "duas implementações para provar a abstração" e passa a ser **"a implementação remota é o caminho de produção do TAPS"** |
 
-**A posição técnica, sem suavizar: guardar uma `edsk` quente para o payout do TAPS é o modelo de maior risco possível para um sistema que move fundos.**
+**A razão registrada, porque ela vale mais que a decisão:** o argumento decisivo não é o vazamento, é que **a pressão operacional produz o defeito**. Uma chave de cofre derivada de passphrase que só vive em RAM não sobrevive a um restart não assistido; alguém então põe a passphrase numa variável de ambiente, e o KDF inteiro vira decoração. Foi exatamente assim que o TAPS chegou ao `appPassphrase` na mesma linha da mesma tabela que o ciphertext. Não foi maldade nem incompetência — foi essa pressão, e ela existiria de novo.
 
-O raciocínio é curto e não depende de qual stack a ADR escolher. Um agendador de payout roda desatendido — não há humano no teclado às 3h da manhã. Logo a chave precisa ser utilizável sem humano. Logo ela é quente. Trocar "quente no Postgres multi-tenant" por "quente no disco do baker" é progresso real e **continua sendo o mesmo modelo**.
+### 11.1 O que passa a ser normativo
 
-E há uma segunda razão, que é a mais importante: **a pressão operacional é que produz o defeito.** Uma chave de cofre derivada de passphrase que só vive em RAM não sobrevive a um restart não assistido; alguém então coloca a passphrase numa variável de ambiente, e o KDF inteiro vira decoração. Foi exatamente assim que o TAPS chegou ao `appPassphrase` na mesma linha da mesma tabela que o ciphertext. Não foi maldade nem incompetência — foi essa pressão, e ela vai existir de novo.
+1. **O backend do TAPS não guarda, não deriva e não carrega chave de payout.** Nenhum campo de banco, nenhum arquivo, nenhuma variável de ambiente. Um PR que reintroduza qualquer um dos três é reprovação automática.
+2. **O caminho de assinatura de payout é a interface `Signer` do Taquito**, com a implementação remota. É a mesma fronteira do §1, com outra implementação atrás.
+3. **O `tz-vault` no TAPS protege apenas a sessão do operador no console.** Não é, e não deve virar, custódia de payout. Isto já valia; agora é a única leitura possível.
+4. **O signer roda em host separado do que expõe superfície de rede.** "Separado" pode ser outra máquina, um contêiner com rede própria, ou um dispositivo — o que não pode é ser o mesmo processo nem o mesmo usuário do sistema.
 
-**O que se recomenda:**
+### 11.2 Configuração exigida do `octez-signer`
 
-1. **`octez-signer` em host separado, com allow-list de operação**, ou **Ledger**. O serviço nunca vê a chave; ele pede assinatura e recebe assinatura.
-2. Como a ADR-0001 §7 já manda tudo passar pela interface `Signer` do Taquito, um assinador remoto é **apenas outra implementação da mesma interface** — daí o requisito 8 da ADR, que exige as duas implementações **desde o começo**. Com as duas desde o dia um, a abstração fica provada em vez de presumida.
-3. **A chave embutida vira modo degradado, opt-in e documentado como tal**, nunca o default silencioso.
+Opções conferidas em `octez` `src/bin_signer/main_signer.ml` em 2026-08-28. Nenhuma delas é default; todas precisam ser ligadas.
 
-**O que muda no produto se isso for adotado:** o baker passa a operar um host (ou um dispositivo) a mais, com instalação, atualização e monitoramento próprios. É custo real de operação e de suporte, e ele precisa aparecer na decisão em vez de ser descoberto pelo primeiro usuário. Em troca, o pior caso deixa de ser "vazou o banco, perderam-se os fundos de todos os delegadores".
+| Exigência | Como | Por quê |
+|---|---|---|
+| **Allow-list de payload** | `--magic-bytes 0x03` (`-M`) | Restringe a **operação genérica**. O signer recusa assinar cabeçalho de bloco (`0x01`) e attestation (`0x02`). Sem isso, uma chave de payout pode ser usada para assinar consenso |
+| **Autenticação do chamador** | `--require-authentication` (`-A`) + `octez-signer add authorized key <pk>` | Sem isso, **qualquer** processo que alcance o socket assina. O TAPS passa a ter uma chave de cliente, que é o que ele guarda — e ela não é a chave dos fundos |
+| **Transporte** | `launch local signer` sobre **socket Unix** com permissão de dono, ou `launch socket signer` em rede privada. HTTP sem TLS **proibido** | O socket Unix é o padrão: sem porta, sem rede, permissão do sistema de arquivos |
+| **Superfície mínima** | **Não** ligar `--allow-list-known-keys` nem `--allow-to-prove-possession` | São off por default. Ficam off |
+| **`--check-high-watermark`** | Não se aplica ao payout (é proteção de baking) | Registrado para não ser ligado "por precaução" e confundir o modelo |
+| **Chave em repouso no signer** | Chave cifrada; desbloqueio **interativo no start do daemon** | Ver a ressalva abaixo |
 
-**O que este documento entrega independentemente da decisão:** o `tz-vault` como componente compartilhado. No TAPS ele protege a **sessão do operador no console**. Ele não é, e não deve virar, a resposta para a chave de payout.
+**A ressalva honesta sobre `--password-filename`:** existe a opção de dar ao signer um arquivo com a senha da chave, e ela **recria exatamente o defeito que a decisão A elimina** — só que num host menor. Se for usada, isso precisa estar escrito no runbook como o que é. **A forma recomendada é desbloqueio interativo no start do daemon**: é uma ação humana por restart de um daemon, não por ciclo de payout, e essa é a diferença prática entre A e B.
+
+### 11.3 Risco residual — o que a opção A **não** resolve
+
+Isto precisa estar escrito agora, antes de alguém supor que a decisão fechou o assunto.
+
+**A opção A elimina a exfiltração da chave. Ela não elimina o uso indevido da chave.** Um atacante com execução no host do TAPS tem a chave de cliente autorizada e pode **pedir** assinaturas dentro da allow-list — inclusive de uma transferência para o endereço dele. O signer assina porque é uma operação genérica válida.
+
+Onde isso se defende, e **não é no signer**:
+
+- **No motor de payout (BRES-46):** destino conferido contra a lista de delegadores calculada localmente, teto de valor por ciclo, e idempotência provada — a mesma distribuição rodando duas vezes não envia duas vezes.
+- **Na trilha de auditoria:** registro de quem disparou, quando e de qual origem. Hoje o TAPS não tem tabela de auditoria nenhuma.
+- **No próprio signer, como reforço:** uma allow-list de destino, se e quando for viável na versão do `octez-signer` em uso.
+
+**O ganho concreto da decisão A, dito sem inflar:** o pior caso deixa de ser "vazou o backup do banco, perderam-se os fundos e a chave nunca mais é segura" e passa a ser "houve comprometimento do host durante uma janela, com perda limitada ao que foi assinado nela, e a chave continua íntegra". É uma mudança de categoria, não uma eliminação de risco.
+
+### 11.4 O que muda no produto
+
+O baker passa a operar um daemon a mais: instalar, atualizar, monitorar, e desbloquear no restart. Isso é custo real de operação e de suporte, e **precisa aparecer na documentação de instalação e no runbook**, não ser descoberto pelo primeiro usuário. Em troca, o backend deixa de ser um alvo que vale a pena atacar.
 
 ---
 
@@ -765,19 +797,29 @@ Esta especificação vale se a ADR-0001 escolher o Finalista B. Os parâmetros s
 
 ---
 
-## 13. Auditoria externa — recomendação e ponto do roadmap
+## 13. Auditoria externa — **adiada por decisão de Rafael**
 
-**Recomendação: sim, e em dois momentos. Custo é decisão de Rafael.**
+| | |
+|---|---|
+| **Decisão** | **Não contratar agora.** "O projeto nem pronto tá; deixa ele estar vivo funcionando, depois pensamos nisso" — Rafael, 2026-08-28, thread do BRES-37 |
+| **Minha posição, registrada** | Concordo com o adiamento nesta fase. Auditar um núcleo que ainda vai mudar é pagar por um retrato que envelhece antes de a fatura vencer |
 
-**Momento 1 — antes da primeira versão pública que segure chave de usuário.** Concretamente: antes de BRES-45/BRES-50 (Tezzet com custódia própria) sair de Ghostnet para qualquer distribuição pública. Escopo fechado e pequeno, que é o que torna isto pagável: `tz-keys` + `tz-vault` + a fronteira do `Signer` + o embrulho por plataforma. É deliberadamente **um núcleo de 1.500 a 2.500 linhas que muda raramente** — BIP-39 e Ed25519 não mudam a cada upgrade de protocolo.
+**Quando a conversa volta.** O adiamento é da contratação, não do critério. A auditoria volta à mesa quando qualquer uma das duas for verdade:
 
-**Momento 2 — antes de o TAPS mover fundos reais em mainnet**, e o escopo depende inteiramente da decisão de custódia do §11. Com `octez-signer`, a auditoria é da política de allow-list e da fronteira. Com chave embutida, é da custódia inteira — mais cara, e essa diferença de custo é um argumento a favor do assinador remoto que deveria entrar na decisão de Rafael.
+1. **Uma build pública passar a segurar chave de usuário de terceiro** — isto é, alguém que não seja nós instalar o Tezzet e colocar fundos dele lá dentro.
+2. **O TAPS mover fundos reais em mainnet** para delegadores de terceiros.
 
-**O que fazer antes disso, que é barato e reduz o que a auditoria vai encontrar:** os critérios de aceite da §9 rodando no CI desde o primeiro commit do núcleo; período obrigatório só-Ghostnet; e o núcleo público antes da auditoria, para revisão da comunidade Tezos.
+Enquanto for desenvolvimento, Ghostnet, uso próprio ou beta fechado com fundos nossos, **não há nada a auditar que valha o dinheiro** e eu não vou bloquear nada por causa disso.
 
-**Casas com trabalho publicado no perímetro relevante** (carteira, KDF, custódia): Trail of Bits, NCC Group, Least Authority, Cure53, Radically Open Security. Uma revisão de escopo fechado deste tamanho está tipicamente na casa de dezenas de milhares de dólares — número a confirmar por cotação, não por este documento.
+**O que substitui a auditoria enquanto ela não acontece** — e isto é obrigação, não sugestão, porque é o que faz o adiamento ser razoável em vez de imprudente:
 
-**Escalado a Rafael, porque é gasto e é decisão de custódia:** contratar ou não, quando, e com qual escopo.
+- Os critérios de aceite da §9 rodando no CI **desde o primeiro commit** do núcleo. É a maior parte do valor de uma auditoria, por zero dólar.
+- **Período só-Ghostnet** até a decisão de mainnet.
+- Núcleo público antes de qualquer auditoria paga, para revisão da comunidade Tezos — que é de graça e frequentemente encontra o que uma auditoria encontraria.
+- Escopo pré-desenhado, para que quando a hora chegar não seja preciso descobrir o que auditar: `tz-keys` + `tz-vault` + fronteira do `Signer` + embrulho por plataforma. Deliberadamente **1.500 a 2.500 linhas que mudam raramente** — BIP-39 e Ed25519 não mudam a cada upgrade de protocolo.
+- Casas com trabalho publicado no perímetro, para quando houver cotação: Trail of Bits, NCC Group, Least Authority, Cure53, Radically Open Security.
+
+**Consequência da decisão A do §11 sobre esta seção:** com o backend nunca vendo a chave de payout, o escopo da eventual auditoria do TAPS encolhe para a política do signer e a fronteira — o que a torna mais barata quando ela acontecer.
 
 ---
 
@@ -787,14 +829,15 @@ Registrado para não ser descoberto como surpresa.
 
 | # | Aberto | Quem decide | Quando |
 |---|---|---|---|
-| 1 | **Custódia da chave de payout do TAPS** | Rafael | Antes de BRES-46 (motor de payout) |
-| 2 | **Auditoria externa** — contratar, quando, escopo | Rafael | Antes de qualquer build público com chave |
+| ~~1~~ | ~~Custódia da chave de payout do TAPS~~ | **DECIDIDO** — opção A, Rafael, 2026-08-28 (§11) | — |
+| ~~2~~ | ~~Auditoria externa~~ | **ADIADA** — Rafael, 2026-08-28. Gatilhos de reentrada no §13 | — |
 | 3 | Stack (Finalista A ou B) | ADR-0001, Rafael | Depende de BRES-37 e BRES-38 |
-| 4 | `KEK_prf` do WebAuthn como terceiro embrulho | Tezos Core & Crypto | Pós-v1. O campo já existe no formato; entra **sem migração** |
-| 5 | TPM2 como `KEK_hw` no Linux | Tezos Core & Crypto | Pós-v1, opcional |
-| 6 | Assinatura `tz4` (BLS) | Tezos Core & Crypto | Quando houver demanda de produto (§4.7) |
-| 7 | Passphrase BIP-39 na criação | Tezos Core & Crypto | Quando houver cerimônia de backup própria |
-| 8 | `v1-mobile+` (128 MiB) | Tezos Core & Crypto | Depois de medir em aparelho físico, não em emulador |
+| 4 | Allow-list de **destino** no signer, além da de payload | Tezos Core & Crypto + Chain & Payouts | Junto com BRES-46 (§11.3) |
+| 5 | `KEK_prf` do WebAuthn como terceiro embrulho | Tezos Core & Crypto | Pós-v1. O campo já existe no formato; entra **sem migração** |
+| 6 | TPM2 como `KEK_hw` no Linux | Tezos Core & Crypto | Pós-v1, opcional |
+| 7 | Assinatura `tz4` (BLS) | Tezos Core & Crypto | Quando houver demanda de produto (§4.7) |
+| 8 | Passphrase BIP-39 na criação | Tezos Core & Crypto | Quando houver cerimônia de backup própria |
+| 9 | `v1-mobile+` (128 MiB) | Tezos Core & Crypto | Depois de medir em aparelho físico, não em emulador |
 
 ---
 
@@ -844,7 +887,6 @@ ABRIR(caminho, obter_passphrase, obter_kek_hw):
 
     devolver Sessao{ dek, segredo }
 
-
 GRAVAR(caminho, segredo, perfil, embrulhos):
     salt ← csprng(16)          # falha do CSPRNG ⇒ ABORTA, nunca degrada
     dek  ← csprng(32)          # DEK nova a cada gravação
@@ -862,7 +904,6 @@ GRAVAR(caminho, segredo, perfil, embrulhos):
     zerar(payload); zerar(dek)
 
     escrita_atomica(caminho, header ‖ embrulhos ‖ corpo)                    # §5.8
-
 
 ASSINAR(sessao, operacao_forjada_localmente, watermark):
     exigir watermark ∈ { OperacaoGenerica }                                 # v1: só 0x03  §4.6
@@ -891,4 +932,6 @@ Tudo abaixo foi conferido em **2026-08-27**, não citado de memória.
 | Achados do TAPS | `taps@agent/cartier/de00c8b0eb47` `ANALYSIS.md` §2.3 e o próprio `wallet-encryption.service.ts` |
 | Achados do Tezzet | `tezzet@agent/cartier/de00c8b0eb47` `ANALYSIS.md` §1.2 e §2 |
 | Portões e escopo | `tezzet@agent/tezos-suite-lead/7362c45f1762` `docs/adr/0001-stack-unificada-tezzet-taps.md` |
+| Opções do `octez-signer` (`--magic-bytes`, `--require-authentication`, `add authorized key`, modos de daemon) | `octez` `src/bin_signer/main_signer.ml:80-124`, `:151-362`, `:363-380`, `:425-431` |
 | Vereditos do spike | BRES-36, thread `01a045b8` |
+| Decisões de custódia e de auditoria | BRES-37, thread `01a045f9` |
