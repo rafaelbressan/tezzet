@@ -1,0 +1,193 @@
+/* ============================================================
+   Suíte Tezos.Rio — tokens de design (web)
+   Gerado a partir de suite/tokens/tokens.json. Fonte única: o JSON.
+   Consumido por tezzet-web e taps-mobile-web.
+   ============================================================ */
+
+:root {
+  /* --- cor ------------------------------------------------- */
+  --c-ink:        #0A0A0A;
+  --c-ink-soft:   #1C1C1C;
+  --c-gold:       #C8B08B;
+  --c-gold-deep:  #A98C63;
+  --c-paper:      #EDEDED;
+  --c-surface:    #FFFFFF;
+  --c-steel:      #6A6A6A;
+  --c-steel-deep: #5A5A5A;
+
+  --c-positive:   #2E6B4F;
+  --c-attention:  #8A6A1F;
+  --c-negative:   #8C2F2F;
+
+  /* --- tipografia ------------------------------------------ */
+  --f-display: 'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif;
+  --f-body:    'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-data:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --t-xs:   0.75rem;
+  --t-sm:   0.875rem;
+  --t-base: 1rem;
+  --t-md:   1.25rem;
+  --t-lg:   1.5625rem;
+  --t-xl:   1.953rem;
+  --t-2xl:  2.441rem;
+  --t-3xl:  3.052rem;
+  --t-4xl:  3.815rem;
+
+  /* --- espaço (grade de 4px) -------------------------------- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-6: 24px; --s-8: 32px; --s-12: 48px; --s-16: 64px; --s-24: 96px;
+
+  /* --- forma ------------------------------------------------ */
+  --radius: 0;
+  --shadow-hard:        2px 2px 0 0 var(--c-ink);
+  --shadow-hard-gold:   2px 2px 0 0 var(--c-gold);
+  --shadow-hard-lifted: 4px 4px 0 0 var(--c-ink);
+
+  /* --- o corte (assinatura) --------------------------------- */
+  --cut-angle:   21deg;
+  --cut-corner:  polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  --cut-divider: polygon(0 0, 100% 0, 100% calc(100% - 28px), 0 100%);
+
+  /* --- movimento -------------------------------------------- */
+  --m-fast:   120ms;
+  --m-base:   220ms;
+  --m-slow:   480ms;
+  --m-reveal: 900ms;
+  --m-ease:   cubic-bezier(0.2, 0, 0, 1);
+
+  /* --- medida ----------------------------------------------- */
+  --measure: 68ch;
+  --shell:   1180px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --m-fast: 1ms; --m-base: 1ms; --m-slow: 1ms; --m-reveal: 1ms; }
+}
+
+/* ============================================================
+   Primitivas partilhadas
+   Estes são os componentes que Tezzet e TAPS têm em comum.
+   Implementados uma vez, corretos uma vez.
+   ============================================================ */
+
+/* Valor em XTZ. Sempre tabular, sempre 6 casas, ponto decimal alinhado. */
+.t-amount {
+  font-family: var(--f-data);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.t-amount__unit { color: var(--c-steel-deep); font-size: 0.8em; margin-left: 0.35em; }
+.t-amount--dust { color: var(--c-steel-deep); }
+
+/* Endereço Tezos. Truncamento no meio: início e fim são o que se confere. */
+.t-address {
+  font-family: var(--f-data);
+  font-size: var(--t-sm);
+  letter-spacing: 0;
+  word-break: break-all;
+}
+.t-address--truncated { white-space: nowrap; }
+
+/* Hash de operação. Sempre um link para o explorador. */
+.t-ophash { font-family: var(--f-data); font-size: var(--t-sm); }
+
+/* Badge de status. O texto carrega o significado; a cor apenas reforça. */
+.t-status {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-family: var(--f-body); font-size: var(--t-xs); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+}
+.t-status--paid      { color: var(--c-positive);  }
+.t-status--pending   { color: var(--c-attention); }
+.t-status--simulated { color: var(--c-steel-deep); }
+.t-status--failed    { color: var(--c-negative);  }
+
+/* Número de ciclo. Prefixo fixo para nunca virar um número solto. */
+.t-cycle { font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+.t-cycle::before { content: "ciclo "; color: var(--c-steel-deep); font-size: 0.85em; }
+
+/* Selo de rede. Ghostnet precisa gritar; mainnet fica quieta. */
+.t-network {
+  font-family: var(--f-body); font-size: var(--t-xs); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  padding: var(--s-1) var(--s-2); border-radius: var(--radius);
+}
+.t-network--mainnet { color: var(--c-steel-deep); border: 1px solid var(--c-steel); }
+.t-network--ghostnet { color: var(--c-ink); background: var(--c-gold); }
+
+/* Botão. O dourado entra pelo corte, no ângulo do logotipo. */
+.t-button {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: inline-block;
+  font-family: var(--f-body); font-size: var(--t-sm); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: var(--s-3) var(--s-6);
+  border: 1px solid var(--c-ink); border-radius: var(--radius);
+  background: var(--c-ink); color: var(--c-paper);
+  box-shadow: var(--shadow-hard-gold);
+  cursor: pointer;
+  transition: box-shadow var(--m-base) var(--m-ease),
+              transform var(--m-base) var(--m-ease),
+              color var(--m-base) var(--m-ease);
+}
+.t-button::before {
+  content: ""; position: absolute; inset: -2px; z-index: -1;
+  background: var(--c-gold);
+  transform: translateX(-102%) skewX(calc(-1 * var(--cut-angle)));
+  transition: transform var(--m-base) var(--m-ease);
+}
+.t-button:hover, .t-button:focus-visible {
+  color: var(--c-ink);
+  box-shadow: var(--shadow-hard-lifted);
+  transform: translate(-2px, -2px);
+}
+.t-button:hover::before, .t-button:focus-visible::before { transform: translateX(0) skewX(0deg); }
+.t-button:active { transform: translate(0, 0); box-shadow: 0 0 0 0 var(--c-ink); }
+
+.t-button--quiet {
+  background: transparent; color: var(--c-ink);
+  box-shadow: none; border-color: var(--c-steel);
+}
+.t-button--quiet:hover, .t-button--quiet:focus-visible { border-color: var(--c-ink); box-shadow: var(--shadow-hard); }
+
+/* Campo. Régua inferior grossa em vez de caixa. */
+.t-field { display: block; }
+.t-field__label {
+  display: block;
+  font-family: var(--f-body); font-size: var(--t-xs); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--c-steel-deep); margin-bottom: var(--s-2);
+}
+.t-field__input {
+  width: 100%;
+  font-family: var(--f-data); font-size: var(--t-base);
+  padding: var(--s-3) 0;
+  border: 0; border-bottom: 2px solid var(--c-steel);
+  border-radius: var(--radius);
+  background: transparent; color: var(--c-ink);
+  transition: border-color var(--m-fast) var(--m-ease);
+}
+.t-field__input:focus { outline: none; border-bottom-color: var(--c-gold-deep); }
+.t-field__hint { font-family: var(--f-body); font-size: var(--t-xs); color: var(--c-steel-deep); margin-top: var(--s-2); }
+.t-field__error { font-family: var(--f-body); font-size: var(--t-xs); color: var(--c-negative); margin-top: var(--s-2); }
+
+/* Cartão. Canto superior direito chanfrado no ângulo do corte. */
+.t-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-ink);
+  border-radius: var(--radius);
+  clip-path: var(--cut-corner);
+  padding: var(--s-6);
+}
+
+/* Foco visível em qualquer lugar. Não negociável. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--c-gold-deep);
+  outline-offset: 2px;
+}
