@@ -9,7 +9,7 @@
 | **Issue** | BRES-40 |
 | **Depende de** | BRES-36 — **entregue em 2026-08-27**, avaliado na seção 11. Falta fechar a medição de P5 contra o container especificado em BRES-37. |
 | **Substitui** | Nada. É a primeira ADR da suíte. |
-| **Emendas** | 2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto.<br>2026-08-27 — Apple retirada do escopo e ausência de usuários em produção confirmada, ambas por decisão direta de Rafael. Emendas anteriores ao relatório do spike, conforme permitido por 3. **Nada foi alterado na seção 3 depois do relatório.** |
+| **Emendas** | 2026-08-29 — R2-bis: override humano de R2 para o caso de P5, registrado antes de BRES-66 reportar.<br>2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto.<br>2026-08-27 — Apple retirada do escopo e ausência de usuários em produção confirmada, ambas por decisão direta de Rafael. Emendas anteriores ao relatório de BRES-36, conforme permitido por 3. **Nenhum portão (P1–P8) e nenhum critério de eliminação (K1–K5) foi alterado depois daquele relatório.** A única alteração posterior na seção 3 é a **R2-bis**, que não é portão: é override humano explícito, de quem decide, registrado antes do relatório de BRES-66 — o dado que ela governa. |
 
 ---
 
@@ -19,7 +19,7 @@
 
 Avaliação completa na **seção 11**. O que falta é nomeável e pequeno; a expectativa honesta é aprovação; e escrever "aprovado" antes de medir seria a racionalização que a seção 3 existe para impedir.
 
-Os critérios foram congelados em 2026-08-27, **antes** de o relatório do spike existir, e não foram alterados depois dele. O histórico do git deste arquivo é a prova da ordem — e a seção 11.1 mostra onde essa ordem já decidiu um caso concreto (K4) que, sem pré-registro, seria discutível para os dois lados hoje.
+Os portões foram congelados em 2026-08-27, **antes** de o relatório do spike existir, e nenhum deles foi alterado depois. A regra de decisão ganhou uma exceção em 2026-08-29 — **R2-bis**, override de quem decide —, e ela também foi escrita antes do dado que governa. O histórico do git deste arquivo é a prova da ordem — e a seção 11.1 mostra onde essa ordem já decidiu um caso concreto (K4) que, sem pré-registro, seria discutível para os dois lados hoje.
 
 ## Aviso que precisa estar na primeira página
 
@@ -222,6 +222,14 @@ Registrado para que não seja usado como argumento depois:
 - **R3 — Falha parcial de plataforma.** P1 verde em Linux e Android mas falho no Windows (ou o inverso entre desktops) → **não decidir agora**. Devolver ao spike com escopo reduzido ao alvo que falhou e prazo definido. Windows é alvo real, não opcional.
 - **R4 — P4 falho por motivo restrito.** Se as crates genéricas (`ed25519-dalek`, `bip39`, `blake2`, `bs58`, `argon2`, `zeroize`) bastam para chave e armazenamento, e a única lacuna é encoding/forjamento Tezos em Rust, **P4 é considerado atendido** — porque a proposta já deixa forjamento no Taquito, do lado TypeScript. Se, e só se, o desenho exigir reimplementar encoding Tezos em Rust, P4 reprova e vale R2.
 - **R5 — Evidência insuficiente.** Se o relatório não permitir avaliar P1–P8 → **não decidir**. Devolver o spike com a lista do que falta. Nesta ADR, adiar é um desfecho válido; decidir sem evidência não é.
+- **R2-bis — Override humano de R2, registrado em 2026-08-29, antes de BRES-66 reportar.** Rafael determinou que, se o vínculo com o Keystore falhar, a resposta **não** é trocar de stack automaticamente: avalia-se primeiro uma camada de proteção compensatória, em issue separada. Isso substitui R2 no caso específico de P5, e mantém R2 intacto para os demais gatilhos (qualquer K, ou P3).
+
+  Três coisas ficam escritas junto, porque um override registrado sem as suas consequências é só uma preferência:
+
+  1. **Foi registrado antes do dado**, que é a única forma legítima de mudar a regra. Mudar R2 depois do relatório de BRES-66 seria racionalização; mudá-la agora é decisão.
+  2. **"Falhou" precisa ser desambiguado, e BRES-66 passa a ter isso como entrega.** Plugin não alcança o Keystore é uma coisa; a plataforma não alcança, mesmo por JNI a partir do Rust, é outra bem diferente. A primeira se resolve escrevendo o módulo nós mesmos; só a segunda é falha de fundo.
+  3. **Camada compensatória não é equivalente ao vínculo de hardware, e a ADR não vai fingir que é.** Endurecer o KDF encarece ataque offline, mas não impede quem já sabe a senha. Exigir PIN na hora de assinar protege o aparelho destravado em cima da mesa, mas não protege o arquivo copiado para fora. Derivar algo do aparelho sem hardware é ofuscação, não fronteira. Se a compensação for por esse caminho, o que se está aceitando é **um cofre cuja proteção real é a senha do usuário** — e isso entra escrito na ADR e no modelo de ameaça, não fica implícito.
+
 - **R6 — Portão humano.** Em qualquer desfecho, a squad recomenda e **Rafael decide**. Nenhuma issue de produto vai para `todo` e o estágio 3 não é promovido antes dessa aprovação.
 
 ---
@@ -489,5 +497,7 @@ Registradas aqui porque foram tomadas na thread de BRES-36 e valem para a suíte
 | 2026-08-28 | **Modelo de banco para autenticação:** biometria/login para entrar, **PIN interno para transacionar**, criado no primeiro acesso. Mesma cerimônia nos dois produtos; o fator por plataforma sai de BRES-37. |
 | 2026-08-28 | **Custódia do TAPS: `octez-signer`, sem Ledger.** O TAPS deixa de guardar chave. |
 | 2026-08-28 | **Tempo de abertura no Android** não é bloqueio; medir quando houver aparelho real. |
+| 2026-08-29 | **Medir P5 antes de decidir** (opção A). BRES-66 despachada. |
+| 2026-08-29 | **Se P5 falhar, avaliar camada compensatória antes de trocar de stack** — R2-bis na seção 3.4, em issue separada. |
 
 Duas dessas mudam o requisito 7 desta ADR e ficam registradas como tal: o prompt nativo (a senha nunca em `<input>` de HTML) e a separação login × PIN de transação.
