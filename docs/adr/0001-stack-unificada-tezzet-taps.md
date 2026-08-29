@@ -2,24 +2,24 @@
 
 | | |
 |---|---|
-| **Status** | **Proposta — passada 1: critérios pré-registrados, decisão pendente** |
-| **Data desta passada** | 2026-08-27 |
+| **Status** | **Proposta — passada 2 avaliada. Nenhuma eliminação disparada; decisão retida por um portão não medido (P5).** |
+| **Data desta passada** | Passada 1: 2026-08-27. Passada 2: 2026-08-28. |
 | **Quem decide** | Rafael Miranda Bressan (portão humano) |
 | **Quem recomenda** | Squad Suíte Tezos — recomendação redigida pelo Tezos Suite Lead |
 | **Issue** | BRES-40 |
-| **Depende de** | BRES-36 (spike Tauri v2 em Linux, Windows e Android) — ainda em execução nesta data |
+| **Depende de** | BRES-36 — **entregue em 2026-08-27**, avaliado na seção 11. Falta fechar a medição de P5 contra o container especificado em BRES-37. |
 | **Substitui** | Nada. É a primeira ADR da suíte. |
-| **Emendas** | 2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto.<br>2026-08-27 — Apple retirada do escopo e ausência de usuários em produção confirmada, ambas por decisão direta de Rafael. Emendas anteriores ao relatório do spike, conforme permitido por 3. |
+| **Emendas** | 2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto.<br>2026-08-27 — Apple retirada do escopo e ausência de usuários em produção confirmada, ambas por decisão direta de Rafael. Emendas anteriores ao relatório do spike, conforme permitido por 3. **Nada foi alterado na seção 3 depois do relatório.** |
 
 ---
 
 ## Decisão
 
-**PENDENTE.** Esta é a passada 1 e ela não decide.
+**RETIDA por um portão não medido.** Nenhum critério de eliminação foi disparado e, em tudo que o spike mediu, o Finalista A (Tauri v2 + núcleo Rust) passou. O portão que carrega a tese de segurança em mobile — P5, vínculo do cofre com o Android Keystore — não foi medido, por falha de processo descrita em 11.4. A regra pré-registrada para esse estado é R5: não decidir.
 
-O que fica fixado aqui é a **regra de decisão**, não a decisão. Três das cinco alternativas estão rejeitadas com evidência já disponível hoje. Duas seguem finalistas. Os portões que separam uma da outra estão pré-registrados na seção 3 e **congelados a partir da data de commit deste arquivo**, antes de o relatório do spike existir.
+Avaliação completa na **seção 11**. O que falta é nomeável e pequeno; a expectativa honesta é aprovação; e escrever "aprovado" antes de medir seria a racionalização que a seção 3 existe para impedir.
 
-O motivo de escrever os critérios primeiro é simples: critério escrito depois do resultado não é critério, é racionalização do que aconteceu de ser mais fácil. O histórico do git deste arquivo é a prova da ordem.
+Os critérios foram congelados em 2026-08-27, **antes** de o relatório do spike existir, e não foram alterados depois dele. O histórico do git deste arquivo é a prova da ordem — e a seção 11.1 mostra onde essa ordem já decidiu um caso concreto (K4) que, sem pré-registro, seria discutível para os dois lados hoje.
 
 ## Aviso que precisa estar na primeira página
 
@@ -309,7 +309,9 @@ Estes não dependem de qual finalista vencer, e a ADR os fixa agora porque são 
 5. **Nenhum segredo tem valor padrão.** Variável ausente, processo recusa subir.
 6. **Nenhuma distribuição de pagamento sem idempotência provada** — teste que roda a mesma distribuição duas vezes e demonstra que a segunda não envia.
 7. **Watermark é argumento obrigatório e tipado — não existe default.** O núcleo recusa assinar bytes arbitrários. Assinar um "texto" com watermark de operação é a forma clássica de transformar assinatura de mensagem em transferência, e P2 só prova o watermark de operação por consequência.
-8. **A interface `Signer` nasce com duas implementações: núcleo local e `octez-signer` remoto.** Motivo na seção 7.1 abaixo.
+8. **A interface `Signer` nasce com duas implementações: núcleo local e `octez-signer` remoto.** Motivo logo abaixo. **Para o TAPS isto deixou de ser opção:** Rafael aprovou `octez-signer` sem Ledger em 2026-08-28, e o TAPS não guarda chave.
+9. **Segredo nunca é coletado por `<input>` de HTML.** Senha, passphrase e PIN são pedidos por prompt nativo, fora da webview. Decisão de Rafael em 2026-08-28, em resposta ao achado de que a senha do vault atravessa para o JavaScript. A parede que protege a semente não vale nada se a chave que a abre nasce do lado errado dela.
+10. **Login e transação são fatores separados,** no modelo de banco: biometria ou senha para **entrar**, PIN interno para **transacionar**, criado no primeiro acesso. Mesma cerimônia nos dois produtos; o fator por plataforma sai de BRES-37 e a linguagem de UI, de BRES-43. Isso remove a política silenciosa (c) — assinar porque o cofre já foi destravado antes — que era o comportamento padrão do código ingênuo.
 
 ### O buraco que nenhum portão cobre — chave quente no desktop
 
@@ -380,13 +382,106 @@ Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto
 
 ---
 
-## 11. Registro da passada 2 — a preencher
+## 11. Passada 2 — avaliação portão a portão
 
-Esta seção será preenchida quando BRES-36 entregar o relatório, aplicando a regra de decisão de 3.4 sem alterá-la.
+**Relatório do spike BRES-36 recebido em 2026-08-27T21:24Z**, com dois comentários de correção do próprio executor até 2026-08-28T01:17Z. Avaliado contra os portões como estavam congelados, sem alteração posterior ao relatório.
 
-- [ ] Relatório do spike recebido em: `____`
-- [ ] Avaliação portão a portão: P1 `__` P2 `__` P3 `__` P4 `__` P5 `__` P6 `__` P7 `__` P8 `__`
-- [ ] Eliminações disparadas: `____`
-- [ ] Regra aplicada: `____`
-- [ ] Decisão em uma frase: `____`
+### 11.1 Resultado
+
+| Portão | Veredito | Evidência |
+|---|---|---|
+| **P1** | **ATENDIDO** | Build verde e app rodando em Linux (WebKitGTK 2.52), Windows (WebView2 151) e Android (API 34). Mesmo `lib.rs` e mesmo `main.ts`; a única diferença é o registro dos plugins móveis atrás de `#[cfg(mobile)]`. Não há fork por plataforma. |
+| **P2** | **ATENDIDO, com desvio de rede registrado em 11.2** | 7 operações injetadas e confirmadas `applied` — 2 Linux, 1 Windows, 4 Android. Limiar pedia 2, com um desktop e um Android. Duas delas partem da mesma conta, a segunda destravando o vault gravado pela primeira, o que fecha o ciclo gravar → cifrar → destravar → assinar. |
+| **P3** | **PARCIAL** | Detalhe em 11.3. |
+| **P4** | **ATENDIDO, menos a fonte de entropia** | Zero crates específicas de Tezos. A lacuna 1 de 3.1.2 está fechada: a crate de derivação foi nomeada — `slipped10` 0.4.7, release 2026-04-04. `bip39` 2.2, `ed25519-dalek` 2.2, `blake2`/`bs58`/`zeroize`/`argon2` ativas. `tezos_crypto_rs` e `tezos_data_encoding` confirmados parados desde 2024-07-02, e nada específico de Tezos precisou ser reimplementado. **A lacuna 2 continua aberta:** o relatório não nomeia o RNG que produziu os 128/256 bits da mnemônica no build Android. |
+| **P5** | **NÃO AVALIADO** | Não é reprovação. Detalhe e consequência em 11.4. |
+| **P6** | **ATENDIDO** | Linux 16 MB (12 MB stripped) em 3m43s, incremental 33s. Windows 11 MB em 5m39s. APK release universal **25 MB** em 6m38s. Todos os limiares eram ≤ 40 MB desktop, ≤ 50 MB APK, ≤ 30 min a frio, ≤ 5 min incremental. Passa com folga. O APK de **debug** tem 279 MB por causa dos símbolos, o que torna o laço de desenvolvimento no Android pesado — é imposto diário, não tamanho de artefato, e P6 mede o artefato. |
+| **P7** | **ATENDIDO** | A seção "o que foi difícil ou frágil" tem nove itens, incluindo os que andam contra a proposta: o caminho documentado do Stronghold colocaria a semente no JavaScript, `Zeroizing` não zerou, e a senha do vault atravessa para o JS. O executor ainda voltou por conta própria para corrigir uma afirmação errada dele mesmo sobre a causa da lentidão do unlock. Isso é o oposto de um relatório só com sucessos. |
+| **P8** | **ATENDIDO** | Mnemônica de teste derivada em `m/44'/1729'/0'/0'` no Rust e no Taquito 25 (`InMemorySigner.fromMnemonic`): endereço, chave pública e assinatura de `0xaabb` batem exatamente, e os valores estão fixados como asserções em 7 testes. É conferência contra implementação independente, como o portão exige. |
+
+**Critérios de eliminação: nenhum disparado.** K1 e K2 não, o Android buildou do mesmo código e injetou 4 operações. K3 não, o Stronghold funcionou no Android. K5 não, zero crates de Tezos.
+
+**K4 não disparado, e vale dizer por quê.** O spike encontrou a senha do vault 1× no heap do renderer Chromium — a semente, zero. A delimitação de K4 foi escrita em 2026-08-27, **antes** do relatório existir: "K4 é sobre material de chave saindo, não sobre senha entrando", porque a senha atravessa JS nos dois finalistas e portanto não discrimina entre eles. Sem essa linha pré-registrada, este exato achado seria hoje discutível para os dois lados. É o pré-registro fazendo o trabalho para o qual existe.
+
+### 11.2 Desvio de rede — Ghostnet deixou de existir
+
+O portão P2 dizia "Ghostnet". O spike reportou que Ghostnet não está no registro `teztnets.json` e que nenhum RPC conhecido resolve DNS, e rodou em **Shadownet**.
+
+**Verificado de forma independente por esta ADR, em 2026-08-28:** o registro lista `bakingnet`, `currentnet`, `mainnet`, `shadownet`, `snet`, `ushuaianet` e `weeklynet`. Não lista Ghostnet. `rpc.ghostnet.teztnets.com` e `ghostnet.tezos.ecadinfra.com` dão NXDOMAIN.
+
+O desvio **não** desqualifica P2: a intenção do portão era operação real numa cadeia pública de teste, verificável por terceiro, e é isso que os 7 hashes são. Ghostnet ter sumido é fato do ambiente, não falha do spike.
+
+**A consequência é maior que P2 e vale para a suíte inteira.** "Ghostnet" estava escrito como critério de aceite em sete issues. É o mesmo erro estrutural que esta ADR já registra duas vezes — valor de rede escrito no código em vez de lido da fonte. Desta vez o valor congelado era a própria rede.
+
+A correção não é substituir uma constante por outra, porque os dois produtos não vão para a mesma rede:
+
+- **Tezzet** (carteira) → **Shadownet**. É o que o registro indica para teste de aplicação.
+- **TAPS** (payout de baker) → **Bakingnet**. O próprio registro do Shadownet pede que não se teste baker nele: *"We prefer that you don't test bakers on this network - please use bakingnet"*. Bakingnet está no ar, protocolo `PsUshuai9Qap…`, mesmo protocolo do Shadownet.
+
+Isso vira mandato de **BRES-38** (levantamento de rede), promovida para `todo` nesta passada: fixar rede, RPC e endpoint de TzKT por produto, lidos de configuração, e nunca mais escritos em critério de aceite como constante.
+
+### 11.3 P3 — parcial, e o que falta é nomeável
+
+O que foi entregue é, em dois pontos, **mais forte** do que o portão pedia. A varredura de memória no Android trouxe **controle positivo**, que o portão nem exigia: no heap do renderer o endereço público aparece 55× e a chave pública 15×, e a mnemônica **0×**. Um dump que claramente alcança o heap do JS e ainda assim não acha o segredo vale muito mais que um dump vazio. No Linux, 664 MB do heap do WebKit varridos, zero ocorrências. E o snapshot em disco tem entropia de 7,281 bits/byte, sem sequência tipo BIP-39.
+
+Cobertos na substância:
+
+- **P3.a** — parcialmente. O app tem uma sonda que tenta extrair o segredo pelos nomes que um chamador plausível tentaria (`get_mnemonic`, `get_seed`, `get_secret_key`, `export_mnemonic`, `secret_key`), e todos respondem "Command not found"; `wallet_info` devolve só `address`, `publicKey`, `derivationPath`; e o `secretKey()` que o `Signer` do Taquito exige **lança exceção em vez de devolver `undefined`**, o que é a decisão certa — `undefined` deixaria um chamador seguir em silêncio por outro caminho. Mas isso é sonda por amostragem, não a enumeração exaustiva de todo `#[tauri::command]` com o tipo de retorno e o ramo `Err` que P3.a pede. É justamente o item que não pode ser amostrado.
+- **P3.d** — coberto por evidência diferente e mais forte (varredura de memória com controle positivo) em vez da asserção sobre payload de IPC.
+
+Não demonstrados:
+
+- **P3.b** — nenhum tipo que carrega segredo implementa `Serialize`. Não reportado. É o item que o compilador garante, e portanto o mais barato de fechar.
+- **P3.c** — caminho de erro e de log auditados, com uma operação deliberadamente falha mostrando o que chega ao JS. Não reportado.
+- **P3.e** — regressão de CI. O spike tem 7 testes, mas do acordo de derivação Rust ↔ Taquito, não da fronteira. Sem isso, a fronteira vale na data do spike e não depois.
+
+### 11.4 P5 — não avaliado, e a causa é minha
+
+P5, como emendado, exige vínculo criptográfico com o Android Keystore (`setUserAuthenticationRequired`), demonstrado por **falha** de decifragem quando a biometria é negada, mais o nível de segurança do device e os parâmetros do KDF escritos.
+
+Nada disso foi medido, e o relatório não permite avaliar. O que ele traz sobre o assunto é o contrário de aprovação: o portão biométrico do spike está no Rust, dentro de `sign_operation` — decisão certa —, mas `status()` responde `is_available=false` com `"Biometrics not enrolled"` mesmo com PIN de dispositivo válido, então o portão escrito da forma óbvia **não dispara e assina**.
+
+**Três fatos que decidem como tratar isto, e o primeiro é uma falha de processo minha:**
+
+1. **O spike nunca recebeu a pergunta.** A emenda que reescreveu P5 foi commitada em 2026-08-27, com BRES-36 já em execução, e **não foi propagada para a descrição da issue**. O critério de aceite que o executor tinha era o original — "guardar a semente cifrada usando o plugin Stronghold, destravado pelo plugin Biometric onde a plataforma oferece" — e esse ele cumpriu. Julgar o relatório contra uma barra que ele nunca recebeu seria injusto e, pior, produziria uma decisão errada.
+2. **O artefato que P5 media foi rejeitado depois.** Tezos Core & Crypto reprovou o Stronghold como container do cofre, com linha e arquivo: parâmetros de KDF herdados de `Default::default()` de terceiro, três `.expect()`/`.unwrap()` no caminho do KDF, sal em arquivo separado, e um scrypt de 512 MiB fixo em crate transitiva que não cabe em Android de entrada. Reexecutar P5 contra o Stronghold seria medir um desenho que ninguém vai entregar.
+3. **Nada no relatório indica que o vínculo com o Keystore seja impossível em Tauri.** Ele indica que não foi tentado. Reprovar o Finalista A por uma propriedade não medida, enquanto o Finalista B tem exatamente a mesma propriedade não medida, não é decisão — é sorteio com aparência de regra.
+
+Portanto o estado de P5 é o descrito em **R5** ("o relatório não permite avaliar"), não o de R2 ("não atendido"). A diferença entre os dois não é conveniência: R2 pressupõe medição com resultado negativo, e não houve medição.
+
+**Escopo real do que P5 trava.** Menor do que parece, por duas razões:
+
+- **TAPS saiu do escopo do cofre.** Rafael aprovou `octez-signer` sem Ledger em 2026-08-28. O TAPS deixa de guardar chave — todo o `WalletEncryptionService` é apagado, não consertado. P5 não gateia nada no TAPS.
+- **As duas primeiras ondas do Tezzet não custodiam nada.** BRES-45 (leitura e Beacon) e BRES-47 (delegação e staking) entregam valor sem o app segurar chave. P5 gateia **BRES-50** (custódia própria), que a sequência do épico já deixou por último de propósito.
+
+### 11.5 Regra aplicada e decisão
+
+**Regra aplicada: R5, restrita a P5.**
+
+- [x] Relatório do spike recebido em: **2026-08-27T21:24Z**
+- [x] Avaliação portão a portão: P1 **ok** · P2 **ok** · P3 **parcial** · P4 **ok, menos entropia** · P5 **não avaliado** · P6 **ok** · P7 **ok** · P8 **ok**
+- [x] Eliminações disparadas: **nenhuma**
+- [x] Regra aplicada: **R5** — não decidir enquanto P5 não for medido
+- [ ] Decisão em uma frase: **pendente de uma medição nomeada**
 - [ ] Aprovação de Rafael em: `____`
+
+**Não é reprovação e não é aprovação.** Em tudo que foi medido, o Finalista A passou — três plataformas do mesmo código, sete operações reais na cadeia, a semente ausente do lado JS com controle positivo, crates genéricas mantidas, derivação conferida contra implementação independente, e custo de build folgado. A expectativa honesta é aprovação. Escrever "aprovado" antes de medir o portão que carrega a tese de segurança seria exatamente a racionalização que a seção 3 existe para impedir.
+
+**O que fecha, e é pequeno:** medir o vínculo com o Keystore contra o container que Tezos Core & Crypto especificou em BRES-37 — não contra o Stronghold —, mais os três itens de P3 (`b`, `c`, `e`) e a fonte de entropia de P4. É trabalho de dias, não de semanas, e a maior parte já está em voo dentro de BRES-37.
+
+**A alternativa legítima é de Rafael, e precisa ser exercida como tal.** Ele pode aprovar agora, aceitando P5 e os itens abertos de P3/P4 como risco registrado. Isso é um **override humano explícito** do portão, é legítimo, e fica escrito nesta seção como override — nunca lavado como "os portões passaram".
+
+### 11.6 Decisões humanas já tomadas que esta ADR incorpora
+
+Registradas aqui porque foram tomadas na thread de BRES-36 e valem para a suíte:
+
+| Data | Decisão de Rafael |
+|---|---|
+| 2026-08-27 | **Apple cortada.** Alvos: Linux, Windows, Android. Ver seção 8. |
+| 2026-08-27 | **Sem baker em produção.** Ver 1.1. |
+| 2026-08-28 | **A senha não passa pela webview.** Prompt nativo é requisito, não opção. Fecha o furo do item 4 do relatório antes da primeira linha de produto. |
+| 2026-08-28 | **Modelo de banco para autenticação:** biometria/login para entrar, **PIN interno para transacionar**, criado no primeiro acesso. Mesma cerimônia nos dois produtos; o fator por plataforma sai de BRES-37. |
+| 2026-08-28 | **Custódia do TAPS: `octez-signer`, sem Ledger.** O TAPS deixa de guardar chave. |
+| 2026-08-28 | **Tempo de abertura no Android** não é bloqueio; medir quando houver aparelho real. |
+
+Duas dessas mudam o requisito 7 desta ADR e ficam registradas como tal: o prompt nativo (a senha nunca em `<input>` de HTML) e a separação login × PIN de transação.
