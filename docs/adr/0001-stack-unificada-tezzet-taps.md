@@ -467,7 +467,13 @@ Portanto o estado de P5 é o descrito em **R5** ("o relatório não permite aval
 
 **Não é reprovação e não é aprovação.** Em tudo que foi medido, o Finalista A passou — três plataformas do mesmo código, sete operações reais na cadeia, a semente ausente do lado JS com controle positivo, crates genéricas mantidas, derivação conferida contra implementação independente, e custo de build folgado. A expectativa honesta é aprovação. Escrever "aprovado" antes de medir o portão que carrega a tese de segurança seria exatamente a racionalização que a seção 3 existe para impedir.
 
-**O que fecha, e é pequeno:** medir o vínculo com o Keystore contra o container que Tezos Core & Crypto especificou em BRES-37 — não contra o Stronghold —, mais os três itens de P3 (`b`, `c`, `e`) e a fonte de entropia de P4. É trabalho de dias, não de semanas, e a maior parte já está em voo dentro de BRES-37.
+**O que fecha, e é pequeno:** medir o vínculo com o Keystore contra o container que Tezos Core & Crypto especificou em BRES-37 — não contra o Stronghold —, mais os itens `b`, `c` e `e` de P3 e a fonte de entropia de P4.
+
+**Estado em 2026-08-29.** BRES-37 entregou e está fechada: `docs/spec/0001-nucleo-criptografico-compartilhado.md`, em `master` deste repositório. Ela resolve metade do problema — **diz o que é certo**, e diz com precisão suficiente para ser medido. A §6.3 especifica o embrulho `KEK_hw` no AndroidKeyStore com `setUserAuthenticationRequired(true)` e `setInvalidatedByBiometricEnrollment(true)`, e a §9.5 repete a exigência desta ADR de que **a demonstração seja negativa**: negar a biometria faz o desembrulho falhar, não faz uma tela não abrir. As §§9.1, 9.6 e 9.7 cobrem, na mesma forma, a entropia de P4 e os três itens de P3 — e as transformam em teste de CI em vez de demonstração única, que é o que P3.e pedia.
+
+Não há conflito entre a especificação e esta ADR, e vale registrar a direção: a especificação **codifica** os portões como critério de aceite executável, em vez de apenas referenciá-los. Isso é melhor que o que a ADR pediu.
+
+**O que continua faltando é a medição, e só ela.** Despachada em **BRES-66**, estágio 1, com o mesmo enquadramento do BRES-36: artefato descartável, o relatório é a entrega, e nada entra nos repositórios de produto enquanto esta ADR não fechar.
 
 **A alternativa legítima é de Rafael, e precisa ser exercida como tal.** Ele pode aprovar agora, aceitando P5 e os itens abertos de P3/P4 como risco registrado. Isso é um **override humano explícito** do portão, é legítimo, e fica escrito nesta seção como override — nunca lavado como "os portões passaram".
 
