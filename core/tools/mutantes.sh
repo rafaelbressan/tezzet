@@ -95,11 +95,10 @@ muta "segredo volta para array direto (a copia deixada pelo move)" \
 #    lista de conta-zero da §9.6 (§7.1.4).
 muta "a sessao aberta guarda a mnemonica" \
   crates/tezos-core/src/session.rs \
-  '    let frase = Phrase::new(mnemonic.phrase().expose()).ok_or(tz_keys::KeyError::MnemonicWordCount)?;
-    Ok((session, frase))' \
-  '    let frase = Phrase::new(mnemonic.phrase().expose()).ok_or(tz_keys::KeyError::MnemonicWordCount)?;
-    let mut session = session;
-    session.identity_mut().public_key = format!("{} {}", session.identity().public_key, frase.expose());
+  '    Ok((session, frase))' \
+  '    let mut session = session;
+    let guardada = frase.expose().to_string();
+    session.identity_mut().public_key = guardada;
     Ok((session, frase))' \
   'cargo build -p tezos-core --features memscan-gate --example cria_cofre >/dev/null 2>&1; cargo test -p tezos-core --features memscan-gate --test memscan_portao -- --test-threads=1'
 
@@ -136,13 +135,14 @@ muta "o erro carrega a senha tentada" \
   '            Self::CannotOpen => "nao foi possivel abrir o cofre com a senha correto-Cavalo-Bateria-Grampo-2026!",' \
   'cargo test -p tezos-core --test caminho_de_erro a_senha_errada'
 
-# 7. A validacao de faixa do KDF vai para **depois** do KDF. O arquivo passa a
+# 7. A validacao de faixa some do caminho de abertura. O arquivo passa a
 #    mandar no processo: 8 GiB de memoria a pedido (§5.6).
-muta "a faixa do KDF e validada depois do KDF" \
+muta "a faixa do KDF deixa de ser validada antes do KDF" \
   crates/tz-vault/src/kdf.rs \
-  '    profile.validate_range(m_kib, t, parallel)?;
-    let params = argon2::Params::new(m_kib, t, parallel, Some(p::KEK_LEN))' \
-  '    let params = argon2::Params::new(m_kib.min(200_000), t.min(4), parallel.min(4), Some(p::KEK_LEN))' \
+  '        let na_faixa = (p::M_KIB_MIN..=p::M_KIB_MAX).contains(&m_kib)' \
+  '        return Ok(());
+        #[allow(unreachable_code)]
+        let na_faixa = (p::M_KIB_MIN..=p::M_KIB_MAX).contains(&m_kib)' \
   'cargo test -p tz-vault --features fault-injection --test cofre parametros_fora_da_faixa'
 
 # 8. O preenchimento do nonce do AES-GCM deixa de ser conferido. Item 20 do
