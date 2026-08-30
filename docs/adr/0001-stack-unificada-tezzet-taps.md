@@ -2,24 +2,30 @@
 
 | | |
 |---|---|
-| **Status** | **Proposta — passada 2 avaliada. Nenhuma eliminação disparada; decisão retida por um portão não medido (P5).** |
-| **Data desta passada** | Passada 1: 2026-08-27. Passada 2: 2026-08-28. |
+| **Status** | **ACEITA — passada 3. Finalista A (Tauri v2 + núcleo Rust) aprovado por Rafael em 2026-08-30, com override humano explícito da cláusula de hardware de P5. Ver seção 12.** |
+| **Data desta passada** | Passada 1: 2026-08-27. Passada 2: 2026-08-28. Passada 3: 2026-08-30. |
 | **Quem decide** | Rafael Miranda Bressan (portão humano) |
 | **Quem recomenda** | Squad Suíte Tezos — recomendação redigida pelo Tezos Suite Lead |
 | **Issue** | BRES-40 |
-| **Depende de** | BRES-36 — **entregue em 2026-08-27**, avaliado na seção 11. Falta fechar a medição de P5 contra o container especificado em BRES-37. |
+| **Depende de** | BRES-36 — **entregue em 2026-08-27**, avaliado na seção 11. BRES-66 — **entregue em 2026-08-30**, avaliado na seção 12. Nada mais pendente. |
 | **Substitui** | Nada. É a primeira ADR da suíte. |
-| **Emendas** | 2026-08-29 — R2-bis: override humano de R2 para o caso de P5, registrado antes de BRES-66 reportar.<br>2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto.<br>2026-08-27 — Apple retirada do escopo e ausência de usuários em produção confirmada, ambas por decisão direta de Rafael. Emendas anteriores ao relatório de BRES-36, conforme permitido por 3. **Nenhum portão (P1–P8) e nenhum critério de eliminação (K1–K5) foi alterado depois daquele relatório.** A única alteração posterior na seção 3 é a **R2-bis**, que não é portão: é override humano explícito, de quem decide, registrado antes do relatório de BRES-66 — o dado que ela governa. |
+| **Emendas** | 2026-08-30 — nenhuma. A passada 3 **não altera portão nem regra**: aplica as que já estavam escritas e registra o override humano previsto em 11.5.<br>2026-08-29 — R2-bis: override humano de R2 para o caso de P5, registrado antes de BRES-66 reportar.<br>2026-08-27 — P3, P4, P5 e K4 reescritos, P8 e requisitos 7.7/7.8 acrescentados, após revisão de Tezos Core & Crypto.<br>2026-08-27 — Apple retirada do escopo e ausência de usuários em produção confirmada, ambas por decisão direta de Rafael. Emendas anteriores ao relatório de BRES-36, conforme permitido por 3. **Nenhum portão (P1–P8) e nenhum critério de eliminação (K1–K5) foi alterado depois daquele relatório.** A única alteração posterior na seção 3 é a **R2-bis**, que não é portão: é override humano explícito, de quem decide, registrado antes do relatório de BRES-66 — o dado que ela governa. |
 
 ---
 
 ## Decisão
 
-**RETIDA por um portão não medido.** Nenhum critério de eliminação foi disparado e, em tudo que o spike mediu, o Finalista A (Tauri v2 + núcleo Rust) passou. O portão que carrega a tese de segurança em mobile — P5, vínculo do cofre com o Android Keystore — não foi medido, por falha de processo descrita em 11.4. A regra pré-registrada para esse estado é R5: não decidir.
+**ACEITA: Tauri v2 + núcleo Rust (Finalista A)**, para o Tezzet (desktop + mobile) e para o TAPS (desktop local-first + companion mobile). Aprovada por Rafael em 2026-08-30.
 
-Avaliação completa na **seção 11**. O que falta é nomeável e pequeno; a expectativa honesta é aprovação; e escrever "aprovado" antes de medir seria a racionalização que a seção 3 existe para impedir.
+**A aprovação inclui um override humano explícito, e ele não é detalhe de rodapé.** Sete dos oito portões passaram pela regra. O oitavo, P5, passou **no mecanismo** e não passou **no hardware**: o cofre é recusado pelo AndroidKeyStore quando a biometria é negada — recusa criptográfica, não tela que não abre —, mas o único aparelho disponível foi emulador, e o `KeyInfo.getSecurityLevel()` dele é `Software`. P5, como escrito na seção 3.1.3, exige que o relatório diga **TEE ou StrongBox**; a resposta medida foi *nenhum dos dois*.
 
-Os portões foram congelados em 2026-08-27, **antes** de o relatório do spike existir, e nenhum deles foi alterado depois. A regra de decisão ganhou uma exceção em 2026-08-29 — **R2-bis**, override de quem decide —, e ela também foi escrita antes do dado que governa. O histórico do git deste arquivo é a prova da ordem — e a seção 11.1 mostra onde essa ordem já decidiu um caso concreto (K4) que, sem pré-registro, seria discutível para os dois lados hoje.
+Pela letra da regra isso é P5 não atendido. Rafael exerceu a alternativa que a seção 11.5 já reservava para ele: aprovar agora com o risco **registrado, não resolvido**. Isso é override de quem decide, está escrito como override na **seção 12.3**, e não deve ser citado em lugar nenhum como "os portões passaram".
+
+O risco tem dono, prazo e trava: **BRES-67** confirma o vínculo em aparelho com TEE e senta no estágio 5, antes do BRES-50 (custódia própria). Enquanto ele não fechar, nenhuma versão do Tezzet segura chave de usuário. Se nunca aparecer aparelho, isso trava de propósito.
+
+Os portões foram congelados em 2026-08-27, **antes** de o relatório do spike existir, e nenhum deles foi alterado depois — nem na passada 3, com o dado já na mesa. A única alteração posterior na seção 3 foi **R2-bis**, override registrado em 2026-08-29, também antes do dado que governa. O histórico do git deste arquivo é a prova da ordem, e a seção 11.1 mostra onde essa ordem já decidiu um caso concreto (K4) que, sem pré-registro, seria discutível para os dois lados hoje.
+
+Avaliação da passada 2 na **seção 11**; fechamento, override e consequências na **seção 12**.
 
 ## Aviso que precisa estar na primeira página
 
@@ -366,6 +372,7 @@ Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto
 | **RV-2** | Plugin essencial (Stronghold ou Biometric) abandonado, ou incompatível com uma versão obrigatória de sistema operacional. | Total. |
 | **RV-3** | Apple volta ao escopo (seção 8) e o alvo iOS se mostra inviável no framework escolhido. | **Parcial:** mobile migra para nativo ou RN+Expo; desktop permanece. O núcleo de chave é o mesmo nos dois casos. Enquanto Apple estiver fora do escopo, este gatilho está dormente. |
 | **RV-4** | Exigência de loja que bloqueie a publicação e não tenha caminho de contorno. | Parcial ou total conforme a exigência. Escalado a Rafael. |
+| **RV-6** | **BRES-67 mede em aparelho com TEE e o vínculo com o Keystore não se sustenta** — o desembrulho abre sem autenticação, ou `setInvalidatedByBiometricEnrollment(true)` continua sem efeito em hardware real. | **Nenhuma reversão automática de stack:** vale R2-bis, e a resposta é avaliar camada compensatória em issue separada. O que muda de imediato é que o override de 12.3 fica **revogado** — a custódia própria (BRES-50) não anda, e o que se estaria aceitando passa a ser um cofre cuja proteção real é a senha do usuário, escrito assim na ADR e no modelo de ameaça. |
 | **RV-5** | Descobre-se que existe baker rodando TAPS em produção. | Nenhuma reversão de stack, mas **muda a urgência de tudo**: as correções de segurança do sistema atual (JWT forjável, pagamento duplicado por retry) deixam de ser "não vale o esforço" e viram trabalho imediato, em paralelo com a reescrita. |
 
 ---
@@ -391,6 +398,8 @@ Isto não é objeção a nenhum dos dois finalistas. É onde Tezos Core & Crypto
 ---
 
 ## 11. Passada 2 — avaliação portão a portão
+
+> **Registro histórico, preservado como estava.** Esta seção descreve o estado em 2026-08-28, quando a decisão era R5 — não decidir. Ela **não** foi reescrita depois do dado chegar. O fechamento está na **seção 12**.
 
 **Relatório do spike BRES-36 recebido em 2026-08-27T21:24Z**, com dois comentários de correção do próprio executor até 2026-08-28T01:17Z. Avaliado contra os portões como estavam congelados, sem alteração posterior ao relatório.
 
@@ -470,8 +479,8 @@ Portanto o estado de P5 é o descrito em **R5** ("o relatório não permite aval
 - [x] Avaliação portão a portão: P1 **ok** · P2 **ok** · P3 **parcial** · P4 **ok, menos entropia** · P5 **não avaliado** · P6 **ok** · P7 **ok** · P8 **ok**
 - [x] Eliminações disparadas: **nenhuma**
 - [x] Regra aplicada: **R5** — não decidir enquanto P5 não for medido
-- [ ] Decisão em uma frase: **pendente de uma medição nomeada**
-- [ ] Aprovação de Rafael em: `____`
+- [x] Decisão em uma frase: **fechada na passada 3** — ver 12.2. Na data desta passada 2 ela era, corretamente, *pendente de uma medição nomeada*.
+- [x] Aprovação de Rafael em: **2026-08-30**, na thread de BRES-66, como **override humano explícito** de P5 — registrado em 12.3, não como portão atendido.
 
 **Não é reprovação e não é aprovação.** Em tudo que foi medido, o Finalista A passou — três plataformas do mesmo código, sete operações reais na cadeia, a semente ausente do lado JS com controle positivo, crates genéricas mantidas, derivação conferida contra implementação independente, e custo de build folgado. A expectativa honesta é aprovação. Escrever "aprovado" antes de medir o portão que carrega a tese de segurança seria exatamente a racionalização que a seção 3 existe para impedir.
 
@@ -499,5 +508,87 @@ Registradas aqui porque foram tomadas na thread de BRES-36 e valem para a suíte
 | 2026-08-28 | **Tempo de abertura no Android** não é bloqueio; medir quando houver aparelho real. |
 | 2026-08-29 | **Medir P5 antes de decidir** (opção A). BRES-66 despachada. |
 | 2026-08-29 | **Se P5 falhar, avaliar camada compensatória antes de trocar de stack** — R2-bis na seção 3.4, em issue separada. |
+| 2026-08-30 | **Aprovar o Finalista A agora, com o nível de hardware de P5 por confirmar** (opção A). Override humano explícito, registrado em 12.3; risco despachado como BRES-67. |
 
 Duas dessas mudam o requisito 7 desta ADR e ficam registradas como tal: o prompt nativo (a senha nunca em `<input>` de HTML) e a separação login × PIN de transação.
+
+---
+
+## 12. Passada 3 — a medição fechou, e a decisão
+
+**Relatório de BRES-66 recebido em 2026-08-30T00:37Z**, com artefato, log do aparelho, log do CI, o cofre binário e a fonte anexados. Medido contra `docs/spec/0001-nucleo-criptografico-compartilhado.md` em `master`, não contra o Stronghold — que era a condição escrita em 11.5. Avaliado contra os portões como estavam congelados. **Nenhum portão e nenhuma regra foi tocado nesta passada**, com o dado já na mesa.
+
+### 12.1 Os cinco itens que faltavam
+
+| Item | Veredito | Evidência |
+|---|---|---|
+| **P5** — vínculo com o Keystore | **MECANISMO ATENDIDO; NÍVEL DE HARDWARE NÃO MEDIDO** | Detalhe em 12.2. |
+| **P4** — fonte de entropia (lacuna 2 de 3.1.2) | **ATENDIDO, e mais forte que o pedido** | `getrandom(2)` chamado **direto** via `libc::getrandom` no build Android — sem crate de fachada no meio, de propósito, para que a afirmação seja verificável por `strace` em vez de por leitura de documentação. **Não existe fallback:** com o CSPRNG indisponível a criação de carteira falha com `EntropyUnavailable`, e o cofre falha junto, porque sal, DEK e nonces vêm da mesma fonte. Um mutante que acrescenta fallback "só para o app não quebrar" deixa o CI vermelho. |
+| **P3.b** — segredo não serializável | **ATENDIDO** | Seis casos `trybuild` que **não compilam**, com o `.stderr` fixado ao lado provando que o motivo é o certo. É o item que o compilador garante, e agora é ele que garante. |
+| **P3.c** — caminho de erro e log | **ATENDIDO** | Operação deliberadamente falha, no CI e no aparelho: o que chega ao JavaScript é `VAULT_WRAP_AUTH_FAILED` e nada mais — enum fechado, sem payload. |
+| **P3.e** — regressão de CI | **ATENDIDO** | Varredor de memória no CI, job verde, mnemônica 0× **com o controle positivo obrigatório** — sem ele um dump vazio passaria por engano. Cinco mutantes deixam os portões vermelhos, o que é a única prova de que um teste verde significa alguma coisa. |
+
+**P3 deixa de ser parcial.** Com `b`, `c` e `e` fechados, os cinco itens da seção 3.1.1 estão cobertos: `a` pela enumeração completa dos 11 comandos com tipo de retorno e ramo `Err`, `d` pela varredura com controle positivo, e os três novos por teste que quebra. **Resíduo anotado, não escondido:** a enumeração de P3.a é mantida à mão — não há teste que falhe se alguém acrescentar um `#[tauri::command]` e esquecer de listá-lo. Isso vira requisito do BRES-41, não pendência da ADR.
+
+**Nenhum critério de eliminação novo foi disparado.**
+
+### 12.2 P5 — o que passou, e o que não passou
+
+**Passou o que decide.** App morto, reaberto, prompt biométrico **negado**, e o desembrulho falhou com `KeyStoreException: Key user not authenticated`. Recusa do Keystore, não tela que não abre. Aceito → abre. O cofre puxado por `adb` tem 389 bytes, entropia 7,198 bits/byte, e a única string legível dentro dele é o alias do Keystore.
+
+Isso é exatamente o defeito que P5 foi escrito para excluir — a trava que é visibilidade de layout, o achado do Tezzet reimportado com nome melhor. Ele está excluído por medição, não por argumento.
+
+**Não passou o hardware, e o executor disse isso com todas as letras.** O único aparelho disponível foi emulador:
+
+- `KeyInfo.getSecurityLevel()` = `Software`. Nem TEE, nem StrongBox. A seção 3.1.3 diz que StrongBox não bloqueia e **TEE basta**, mas que é bloqueante o relatório **dizer qual dos dois**. A resposta medida é *nenhum*.
+- `setInvalidatedByBiometricEnrollment(true)` **não teve efeito**. Foi aceito na geração sem erro, o `KeyInfo` devolve `false`, e cadastrar uma digital nova **não invalidou o cofre** — ele abriu. Em keystore de software isso é esperado; em TEE deveria falhar.
+
+O segundo ponto merece ser lido devagar, porque é o relatório fazendo o trabalho certo contra o próprio interesse: **um flag que parece criptográfico, é aceito sem erro, e não faz nada.** Se ninguém tivesse testado o comportamento em vez de ler o código, este documento estaria registrando "flag ligado" e estaria errado. É a mesma classe de defeito de P5, um nível abaixo.
+
+**Decisão em uma frase:** *o vínculo criptográfico com o Keystore se sustenta em Tauri no mecanismo, o nível de hardware continua por confirmar, e o Finalista A é aprovado com esse risco registrado e travado no estágio 5.*
+
+### 12.3 O override, escrito como override
+
+Pela letra da seção 3.1.3, P5 não está atendido: falta o relatório dizer TEE ou StrongBox. Pela letra de R2, P5 não atendido reprova o Finalista A. **A decisão desta ADR não é essa, e a diferença é uma escolha humana, não uma leitura generosa da regra.**
+
+A cadeia, para que ninguém precise reconstruí-la depois:
+
+1. **R2 não se aplica sozinha ao caso de P5.** R2-bis, registrada em 2026-08-29 **antes** deste dado existir, substitui R2 nesse gatilho específico: falha de P5 não troca a stack automaticamente.
+2. **R5 também não se aplica.** R5 é para relatório que não permite avaliar. Este permite: ele mediu, e reportou um resultado ruim de forma explícita e reproduzível.
+3. **Aplicou-se R6 — o portão humano.** Rafael aprovou seguir em 2026-08-30, exercendo a alternativa que 11.5 já reservava: *"Ele pode aprovar agora, aceitando P5 e os itens abertos como risco registrado. Isso é um override humano explícito do portão, é legítimo, e fica escrito nesta seção como override — nunca lavado como 'os portões passaram'."*
+
+**Então fica escrito:** os portões **não** passaram todos. Sete passaram. O oitavo passou pela metade que se conseguiu medir, e a outra metade foi aceita como risco por quem tem autoridade para aceitar risco. Qualquer documento, comentário ou apresentação desta squad que resuma esta ADR como "Tauri aprovado, oito de oito" está errado e contradiz esta seção.
+
+**O que o override compra e o que ele não compra.** Compra desbloqueio: o estágio 3 pode ser promovido e as duas primeiras ondas do Tezzet — leitura/Beacon e delegação/staking — não custodiam nada, então elas não dependem do que ficou aberto. Não compra custódia: **BRES-50 não anda antes do BRES-67**, e a barreira de estágio é o que faz isso ser mecânico em vez de depender de alguém lembrar.
+
+**Se BRES-67 responder "não" em hardware real**, o gatilho é RV-6 (seção 9): o override é revogado, R2-bis manda avaliar camada compensatória antes de trocar de stack, e o que se estaria aceitando — um cofre cuja proteção real é a senha do usuário — entra escrito na ADR e no modelo de ameaça, como R2-bis já exige.
+
+### 12.4 O que isto desbloqueia, e o que continua travado
+
+**Desbloqueado pela aprovação (R6 satisfeita):**
+
+- O estágio 3 pode ser promovido: `tezos-core` em Rust (BRES-41), camada de cadeia em TypeScript (BRES-42), jornada única (BRES-43) e harness de QA (BRES-44).
+- O requisito 1 da seção 7 — núcleo de chave atrás da interface `Signer`, cadeia em TypeScript com Taquito — passa de desenho recomendado a obrigação de implementação. É ele que mantém a janela de reversão aberta até o fim do estágio 4.
+
+**Continua travado, por desenho:**
+
+- **BRES-50 (custódia própria do Tezzet)**, atrás de BRES-67 por barreira de estágio.
+- **Qualquer versão pública que segure chave de usuário**, pela mesma razão, mais a auditoria externa que a seção 10 já exige.
+
+### 12.5 Achados sobre a SPEC-0001 — reportados, não trocados
+
+O executor encontrou quatro pontos em que a especificação do núcleo criptográfico não é implementável exatamente como está, e fez a coisa certa: implementou uma leitura, escreveu qual foi, e **não decidiu nada**. Os quatro são de Tezos Core & Crypto e estão despachados como issue de estágio 1, antes de o estágio 3 escrever a primeira linha do cofre:
+
+1. **Um `aead_id` por arquivo não cobre os dois AEADs do mesmo cofre.** A §6.3 obriga AES-256-GCM no embrulho `KEK_hw` (é o que o AndroidKeyStore faz) e a §5.4 põe XChaCha20-Poly1305 no corpo. Convivem no mesmo arquivo.
+2. **`wrap_nonce` tem 24 bytes; o IV do AES-GCM tem 12.** Guardado alinhado à esquerda, resto em zero. Funciona, e não está escrito.
+3. **No `KEK_hw` o nonce não é nosso.** `setRandomizedEncryptionRequired(true)` faz o Keystore sortear o IV, então a regra da §5.4 — "se o CSPRNG falhar, aborta" — não tem como ser cumprida nesse embrulho. É exceção legítima, e precisa estar escrita.
+4. **"Zero ocorrências do material `edsk`" (§9.6) tem duas leituras honestas com vereditos opostos.** A forma base58 `edsk...` é o que o varredor conta; o escalar cru de 32 bytes está em memória e **tem que estar**, porque a §5.9 manda o cofre aberto guardar exatamente a DEK e o escalar.
+
+O quarto é o mais importante dos quatro, e não pela criptografia: uma especificação que admite duas leituras honestas com vereditos opostos produz, mais cedo ou mais tarde, uma revisão aprovando o que a outra reprovaria.
+
+### 12.6 O que continua não medido, dito aqui para não sumir
+
+- **Aparelho Android com TEE ou StrongBox.** BRES-67.
+- **Desktop Linux e Windows do app Tauri não foram rebuildados nesta medição** — falta GTK/WebKit e não há `sudo` na máquina que rodou BRES-66. P1 já está atendido pelo BRES-36 e nada aqui o contradiz; o núcleo `tzcore` buildou e passou em Linux, que é onde P3 e P4 rodam.
+- **Teste que quebre quando um `#[tauri::command]` novo não for enumerado** (resíduo de P3.a, ver 12.1).
+- **iOS e macOS**, fora do escopo por decisão de Rafael (seção 8).
