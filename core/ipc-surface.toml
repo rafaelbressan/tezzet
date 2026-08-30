@@ -1,0 +1,33 @@
+# Superficie de IPC da Suite Tezos — SPEC-0001 §9.7, residuo de P3.a da
+# ADR-0001 §12.1.
+#
+# `sources` sao os diretorios varridos atras de `#[tauri::command]`.
+# `commands` e a enumeracao exaustiva. O teste
+# `tz-ipc-guard/tests/portao.rs::a_superficie_declarada_no_manifesto_bate_com_o_fonte`
+# fica **vermelho** quando as duas listas divergem, nos dois sentidos: comando
+# novo nao enumerado, e nome enumerado que nao existe mais.
+#
+# **Quando o shell Tauri chegar** (Tezzet BRES-45, TAPS BRES-48), acrescente o
+# diretorio dele em `sources` e enumere os comandos aqui. Nao ha codigo novo a
+# escrever — so estas duas listas.
+#
+# Regra de revisao: um comando novo e um furo novo na parede entre o codigo que
+# ve a chave e o codigo que nao ve. Acrescentar um nome a `commands` exige
+# revisao de Tezos Core & Crypto.
+
+sources = [
+    # O nucleo nao expoe IPC: ele e biblioteca, e o shell e que expoe. A raiz
+    # inteira das crates entra na varredura justamente para que um
+    # `#[tauri::command]` escrito **aqui dentro** — onde ele nao deveria
+    # existir — tambem reprove.
+    "crates/tezos-core/src",
+    "crates/tz-keys/src",
+    "crates/tz-vault/src",
+    "crates/tz-rng/src",
+    "crates/tz-memscan/src",
+    "crates/tz-params/src",
+]
+
+commands = [
+    # Vazia por enquanto: o nucleo e biblioteca. Ver o comentario acima.
+]

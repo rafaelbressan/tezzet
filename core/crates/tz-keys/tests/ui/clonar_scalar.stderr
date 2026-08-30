@@ -1,0 +1,5 @@
+error[E0599]: no method named `clone` found for struct `Scalar` in the current scope
+ --> tests/ui/clonar_scalar.rs:5:20
+  |
+5 |     let _copia = s.clone();
+  |                    ^^^^^ method not found in `Scalar`

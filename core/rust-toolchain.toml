@@ -1,0 +1,23 @@
+# A versao do compilador e **parte do portao**, nao detalhe de ambiente.
+#
+# Por que isto existe, com o caso concreto: os arquivos `.stderr` dos casos
+# `trybuild` de `tz-keys/tests/ui/` sao **texto de diagnostico do rustc**. Eles
+# nao sao decoracao — sao o que prova que "nao compilou" aconteceu pelo motivo
+# certo, e nao por um erro de digitacao no arquivo de caso. Mas o rustc melhora
+# a redacao das mensagens entre versoes: o 1.95 diz "no variant or associated
+# item named `Custom`" e o 1.98 diz "no variant, associated function, or
+# constant named `Custom`". A mesma prova, outro texto.
+#
+# Sem pino, o portao mais forte do repositorio — o que o compilador garante —
+# fica vermelho toda vez que o runner do CI atualiza sozinho, e a saida de
+# menor esforco vira afrouxar o teste. Com pino, subir de versao e um commit
+# deliberado que reescreve os `.stderr` e passa por revisao.
+#
+# Subir a versao: trocar aqui, rodar `TRYBUILD=overwrite cargo test -p tz-keys
+# --test compilacao_deve_falhar` e **ler o diff dos `.stderr`** antes de
+# commitar. Se algum caso passar a compilar, isso e um portao caindo, nao um
+# snapshot a atualizar.
+
+[toolchain]
+channel = "1.98.0"
+components = ["rustfmt", "clippy"]

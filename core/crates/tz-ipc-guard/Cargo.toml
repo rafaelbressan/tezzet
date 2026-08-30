@@ -1,0 +1,10 @@
+[package]
+name = "tz-ipc-guard"
+description = "SPEC-0001 §9.7 e ADR-0001 §12.1: o teste que quebra quando um `#[tauri::command]` novo nao e enumerado na superficie de IPC."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]

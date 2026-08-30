@@ -9,7 +9,7 @@
 | **Origem** | Mandato escrito pelo Tezos Suite Lead em BRES-37, autorizado por Rafael no thread de revisão do spike BRES-36 (`01a045b8`) |
 | **Vale para** | Tezzet e TAPS. Alvos: **Linux, Windows e Android** (ADR-0001 §8 — Apple fora do escopo) |
 | **Relação com a ADR-0001** | Independente. Esta especificação é escrita em **primitivas e parâmetros**, não em linguagem. Ela vale se a stack for Rust e vale se não for. Nomes de biblioteca aparecem só na seção 12, rotulados como *implementação de referência candidata*. |
-| **Emendas** | 2026-08-28 — §11 (custódia do payout do TAPS) e §13 (auditoria externa) reescritas após decisão de Rafael no thread do BRES-37. Nenhum parâmetro criptográfico mudou.<br>2026-08-30 (BRES-68) — §5.2, §5.4, §6.2, §6.3, §9.5, §9.6, §10 e o Apêndice A emendados para resolver os quatro achados do BRES-66. **O formato do arquivo muda** — ver o aviso no início da §5.2. Nenhum algoritmo, parâmetro de KDF ou política de verificação mudou. |
+| **Emendas** | 2026-08-28 — §11 (custódia do payout do TAPS) e §13 (auditoria externa) reescritas após decisão de Rafael no thread do BRES-37. Nenhum parâmetro criptográfico mudou.<br>2026-08-30 (BRES-68) — §5.2, §5.4, §6.2, §6.3, §9.5, §9.6, §10 e o Apêndice A emendados para resolver os quatro achados do BRES-66. **O formato do arquivo muda** — ver o aviso no início da §5.2. Nenhum algoritmo, parâmetro de KDF ou política de verificação mudou.<br>2026-08-30 (BRES-41) — **§9.6, item 1, reescrito com precisão**, depois de a implementação medir que a regra anterior ("3 ou mais palavras consecutivas da wordlist") dispara em prosa em inglês e faria o portão nascer vermelho. O critério novo é mais estreito em forma e **mais forte** que o do BRES-66. Nenhum outro item, algoritmo ou parâmetro mudou. |
 | **O que ela NÃO decide** | Nada que estivesse pendente na passada 1 continua pendente. O que segue aberto está na §14. |
 
 ---
@@ -662,12 +662,28 @@ Conta **zero**. Qualquer ocorrência reprova:
 
 | # | O que o varredor procura | Por que não pode estar lá |
 |---|---|---|
-| 1 | Sequências de 3 ou mais palavras consecutivas da wordlist BIP-39 | §7.1.4 — a mnemônica só existe na criação e na importação |
+| 1 | Sequências de palavras da wordlist BIP-39, pelas **duas regras** logo abaixo | §7.1.4 — a mnemônica só existe na criação e na importação |
 | 2 | As formas **base58** de chave privada: `edsk…` de 32 B e de 64 B, `spsk…`, `p2sk…` | Nenhum caminho de execução codifica chave privada em base58. Se apareceu, alguém formatou segredo em string — e é isso, e só isso, que "material `edsk`" queria dizer |
 | 3 | Os bytes da passphrase digitada | §5.9 — zerada assim que a `KEK_pass` sai do Argon2id |
 | 4 | A `KEK_pass` — os 32 B de saída do Argon2id | §5.9 — zerada logo depois de desembrulhar a DEK |
 | 5 | A semente BIP-39 de 64 bytes | §5.9 — zerada depois da derivação |
 | 6 | O payload de 128 bytes em claro da §5.2, como sequência inteira | Zerado depois da extração (Apêndice A) |
+
+**O item 1, escrito com precisão — emenda de 2026-08-30 (BRES-41).**
+
+A redação anterior deste item era "sequências da wordlist BIP-39 a partir de 3 palavras". Ela é literal e é **inaplicável**: a wordlist do BIP-39 é feita de palavras comuns do inglês, então a regra dispara em prosa qualquer. Medido durante a implementação, e é este dado que motiva a emenda: num processo de teste recém-nascido, **sem carteira nenhuma**, o texto de ajuda do próprio `libtest` produz três ocorrências — `"this option can"`, `"this flag can"`, `"this option can"`. Um portão que nasce vermelho é desligado na semana seguinte, e aí o portão vira zero.
+
+O veredito passa a ser a disjunção de duas regras. Qualquer uma satisfeita **reprova**:
+
+| Regra | O que ela pega |
+|---|---|
+| **(a) só-wordlist** — um trecho de texto ASCII contíguo com 3 ou mais palavras, formado **inteiramente** por palavras da wordlist | A mnemônica guardada como string, que é a forma que ela tem quando vaza. Prosa não tem essa forma: uma única palavra fora da lista quebra o trecho. |
+| **(b) corrida longa** — 6 ou mais palavras consecutivas da wordlist **em qualquer contexto**, inclusive dentro de prosa | O fragmento de mnemônica que caiu no meio de outro buffer, onde a vizinhança não é wordlist. Seis palavras da lista em fila dentro de prosa não acontecem por acaso. |
+
+**A contagem literal — 3 ou mais consecutivas, em qualquer contexto — continua obrigatória no relatório** do portão. Ela deixa de ser o veredito e não deixa de ser medida: um número que some do relatório é um número que ninguém percebe crescer.
+
+**Por que isto não afrouxa nada.** As duas regras juntas são mais fortes que o "≥ 8 palavras" do BRES-66, que é a redação que a §9.6 substituiu: a regra (a) pega uma mnemônica de **3** palavras que o critério antigo deixava passar, e a (b) pega em **6** o que o antigo só pegava em 8. O que se perdeu é o fragmento de 3 a 5 palavras cercado de prosa em inglês — e esse caso é indistinguível de prosa por qualquer critério textual, então nenhum critério o pegava.
+
 
 Aparece **pelo menos uma vez**. A ausência reprova — este é o controle positivo, e ele não é opcional:
 
@@ -688,10 +704,11 @@ Os itens 9 e 10 são o lado que faltava. Com o cofre aberto, o escalar e a DEK *
 
 É a fase 2 que dá sentido à permissão da fase 1: o escalar é legítimo **enquanto o cofre está aberto**, não para sempre. Sem ela, "é legítimo estar em memória" viraria licença permanente e a §5.9 não teria teste nenhum.
 
-**Dois controles do varredor, nenhum opcional:**
+**Três controles do varredor, nenhum opcional:**
 
 1. **O varredor funciona** — num processo separado, senão contamina o dump, planta-se uma mnemônica viva no heap e ele **acha**. Sem isso, "zero ocorrências" pode ser simplesmente um varredor quebrado.
 2. **A varredura alcança a região certa** — itens 7 e 8, obrigatórios nas duas fases.
+3. **A agulha não é encontrada por ser a própria agulha** — o varredor guarda o material procurado **mascarado** (XOR com bytes do CSPRNG) e desmascara na comparação, byte a byte, sem nunca materializar o texto em claro. Sem isso, as duas listas quebram ao mesmo tempo: um item de conta-zero reprova sempre, porque o varredor acha a própria cópia, e um item de controle positivo passa sempre — **inclusive quando a varredura leu a região errada**, que é exatamente o defeito que o controle 2 existe para pegar.
 
 **O que este portão não é.** Ele não prova que não sobrou cópia: a §7.3 já diz que essa prova não existe em sistema operacional de propósito geral, e nada aqui a contradiz. Ele é **regressão** — pega a cópia que o **nosso** código deixou para trás. Se uma dependência do caminho da chave retiver uma cópia que não conseguimos zerar, o portão **não é afrouxado**: a dependência é **nomeada** no relatório de build e o caso sobe para Tezos Core & Crypto, como o `bip39` do BRES-36 subiu.
 

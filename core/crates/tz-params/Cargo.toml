@@ -1,0 +1,11 @@
+[package]
+name = "tz-params"
+description = "Todo parametro criptografico da SPEC-0001, num lugar so. Sem dependencia e sem logica."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Nenhuma. De proposito: esta crate e a norma escrita, nao codigo que roda.

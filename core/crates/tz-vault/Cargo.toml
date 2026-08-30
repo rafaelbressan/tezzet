@@ -1,0 +1,34 @@
+[package]
+name = "tz-vault"
+description = "SPEC-0001 §1 `tz-vault`: o cofre. Formato, KDF, AEAD, embrulhos, gravacao atomica e ciclo de vida em memoria."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tz-params = { workspace = true }
+tz-keys = { workspace = true }
+tz-rng = { workspace = true }
+zeroize = { workspace = true }
+constant_time_eq = { workspace = true }
+
+argon2 = { version = "=0.6.0", default-features = false, features = ["alloc"] }
+chacha20poly1305 = { version = "=0.11.0", default-features = false, features = ["alloc"] }
+aes-gcm = { version = "=0.11.1", default-features = false, features = ["alloc", "aes"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_System_Memory", "Win32_System_Diagnostics_Debug", "Win32_Foundation"] }
+
+[dev-dependencies]
+hex = "=0.4.3"
+tz-rng = { workspace = true, features = ["fault-injection"] }
+
+[features]
+# Repassa a injecao de falha do CSPRNG (§9.1) para quem testa o cofre: sal,
+# DEK e nonce saem da mesma fonte que a entropia da mnemonica.
+fault-injection = ["tz-rng/fault-injection"]

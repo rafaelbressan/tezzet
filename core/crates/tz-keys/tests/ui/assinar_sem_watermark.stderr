@@ -1,0 +1,15 @@
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+  --> tests/ui/assinar_sem_watermark.rs:10:16
+   |
+10 |     let _ = sk.sign(&op);
+   |                ^^^^ --- argument #1 of type `Watermark` is missing
+   |
+note: method defined here
+  --> src/sign.rs
+   |
+   |     pub fn sign(&self, watermark: Watermark, op: &ForgedOperation) -> Result<Signature> {
+   |            ^^^^
+help: provide the argument
+   |
+10 |     let _ = sk.sign(/* Watermark */, &op);
+   |                     ++++++++++++++++
