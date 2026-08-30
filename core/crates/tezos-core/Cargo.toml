@@ -1,0 +1,26 @@
+[package]
+name = "tezos-core"
+description = "Fachada do nucleo criptografico da Suite Tezos: ciclo de vida da carteira e da sessao. E o que o produto consome."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tz-params = { workspace = true }
+tz-rng = { workspace = true }
+tz-keys = { workspace = true }
+tz-vault = { workspace = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+tz-memscan = { workspace = true }
+hex = "=0.4.3"
+tz-rng = { workspace = true, features = ["fault-injection"] }
+tz-vault = { workspace = true, features = ["fault-injection"] }
+
+[features]
+fault-injection = ["tz-rng/fault-injection", "tz-vault/fault-injection"]
+# §9.6 — ver `tz-keys`. Nunca em build de producao.
+memscan-gate = ["tz-keys/memscan-gate"]

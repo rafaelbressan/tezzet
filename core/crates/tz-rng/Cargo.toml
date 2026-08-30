@@ -1,0 +1,20 @@
+[package]
+name = "tz-rng"
+description = "A unica porta para o CSPRNG do sistema operacional. Sem fallback."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
+
+[features]
+# §9.1 — injeta a indisponibilidade do CSPRNG para o teste de falha. Um teste
+# que nao pode falhar nao e um teste. **Nunca em build de producao**, e o
+# `tests/producao.rs` reprova se a feature vazar para o perfil release.
+fault-injection = []

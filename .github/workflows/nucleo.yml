@@ -1,0 +1,99 @@
+# SPEC-0001 §9 — os criterios de aceite do nucleo criptografico, rodando desde
+# o primeiro commit.
+#
+# A §13 adiou a auditoria externa por decisao de Rafael, e escreveu o que
+# substitui a auditoria enquanto ela nao acontece. O primeiro item da lista e
+# este arquivo: *"os criterios de aceite da §9 rodando no CI desde o primeiro
+# commit do nucleo. E a maior parte do valor de uma auditoria, por zero
+# dolar."*
+#
+# **Nenhum passo daqui pode ganhar `continue-on-error`.** O item 18 do
+# anti-catalogo nomeia o defeito, e ele existe hoje no CI do TAPS. O teste
+# `tezos-core/tests/portoes_de_codigo.rs::o_ci_nao_tem_portao_decorativo` le
+# este arquivo e reprova se alguem acrescentar.
+
+name: nucleo
+
+on:
+  push:
+    paths: ['core/**', '.github/workflows/nucleo.yml']
+  pull_request:
+    paths: ['core/**', '.github/workflows/nucleo.yml']
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: core
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  nucleo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: toolchain
+        run: rustup show && rustc --version && cargo --version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+
+      # §9.8 — o lockfile e fixado e commitado. `--locked` reprova quando o
+      # build precisaria mexer nele, que e como uma bump entra sem revisao.
+      - name: build com lockfile fixado
+        run: cargo build --workspace --locked
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: formatacao
+        run: cargo fmt --all -- --check
+
+      # §9.2, §9.3, §9.4, §9.5, §9.7 — vetores oficiais BIP-39 e SLIP-0010,
+      # cruzamento com o Taquito, enderecos, assinatura, cofre, fuzzing do
+      # parser, superficie de IPC e os casos `trybuild` que **nao podem
+      # compilar**.
+      - name: testes do nucleo
+        run: cargo test --workspace --locked --features tezos-core/fault-injection,tz-vault/fault-injection
+
+      # §9.6 — o portao de memoria, nas duas fases, com as duas listas
+      # exaustivas e o controle positivo obrigatorio. Em processo proprio e sem
+      # paralelismo: outro teste rodando ao lado contamina o dump.
+      - name: §9.6 controle -- o varredor acha o que existe
+        run: cargo test -p tezos-core --locked --test memscan_controle -- --nocapture --test-threads=1
+
+      - name: §9.6 portao -- fase 1 aberto, fase 2 trancado
+        run: cargo build -p tezos-core --locked --features memscan-gate --example cria_cofre
+          && cargo test -p tezos-core --locked --features memscan-gate --test memscan_portao -- --nocapture --test-threads=1
+
+      # §9.1 — o relatorio de build **nomeia** a chamada de sistema que produziu
+      # os bits, e nao a biblioteca de fachada.
+      - name: relatorio de build
+        run: cargo run -q --locked --example relatorio -p tezos-core
+
+      # §9.8 — portoes de cadeia de suprimento. Bloqueantes, sem excecao.
+      - name: cargo-deny
+        run: |
+          cargo install --locked cargo-deny --version 0.18.6
+          cargo deny check
+
+      - name: cargo-audit
+        run: |
+          cargo install --locked cargo-audit --version 0.21.2
+          cargo audit
+
+  # Os portoes so valem se ficarem vermelhos quando deveriam. Cinco mutantes,
+  # um defeito real por vez.
+  mutantes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+      - name: mutantes
+        run: ./tools/mutantes.sh

@@ -1,0 +1,14 @@
+[package]
+name = "tz-memscan"
+description = "SPEC-0001 §9.6: o varredor de memoria, com as duas listas exaustivas, as duas fases e o controle positivo obrigatorio."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tz-keys = { workspace = true }
+tz-rng = { workspace = true }
+zeroize = { workspace = true }
+tz-params = { workspace = true }

@@ -1,0 +1,31 @@
+# §9.8 — portao de cadeia de suprimento, **bloqueante**.
+#
+# `continue-on-error: true` e proibido no portao de seguranca (item 18 do
+# anti-catalogo; e o que o CI do TAPS faz hoje com `npm audit`, o que o torna
+# decorativo).
+#
+# Uma dependencia maliciosa roda **dentro do mesmo processo** e tem acesso a
+# tudo que o processo tem, inclusive a DEK destrancada (§2.2 N3). Nada aqui
+# elimina essa classe: isto reduz probabilidade.
+
+[advisories]
+version = 2
+yanked = "deny"
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# §12.1 — a `subtle` falha o criterio P4 (25 meses sem commit) e entra so
+# transitivamente por `ed25519-dalek`/RustCrypto. Fica **registrada como risco**
+# em vez de silenciada: o codigo proprio usa `constant_time_eq`.
+deny = []
+
+[licenses]
+version = 2
+allow = ["MIT", "Apache-2.0", "BSD-3-Clause", "ISC", "Unicode-3.0", "CC0-1.0", "Zlib", "BSL-1.0", "MPL-2.0"]
+confidence-threshold = 0.9
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

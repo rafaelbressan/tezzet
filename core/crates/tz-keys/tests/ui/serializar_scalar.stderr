@@ -1,0 +1,23 @@
+error[E0277]: the trait bound `Scalar: serde::Serialize` is not satisfied
+ --> tests/ui/serializar_scalar.rs:5:26
+  |
+5 |     exige_serializavel::<tz_keys::secret::Scalar>();
+  |                          ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Serialize` is not implemented for `Scalar`
+  |
+  = note: for local types consider adding `#[derive(serde::Serialize)]` to your `Scalar` type
+  = note: for types from other crates check whether the crate offers a `serde` feature flag
+  = help: the following other types implement trait `Serialize`:
+            &'a T
+            &'a mut T
+            ()
+            (T,)
+            (T0, T1)
+            (T0, T1, T2)
+            (T0, T1, T2, T3)
+            (T0, T1, T2, T3, T4)
+          and $N others
+note: required by a bound in `exige_serializavel`
+ --> tests/ui/serializar_scalar.rs:2:26
+  |
+2 | fn exige_serializavel<T: serde::Serialize>() {}
+  |                          ^^^^^^^^^^^^^^^^ required by this bound in `exige_serializavel`

@@ -1,0 +1,5 @@
+error[E0599]: no variant or associated item named `Custom` found for enum `Watermark` in the current scope
+ --> tests/ui/watermark_custom.rs:7:24
+  |
+7 |     let _ = Watermark::Custom(vec![0x05]);
+  |                        ^^^^^^ variant or associated item not found in `Watermark`

@@ -1,0 +1,61 @@
+# Workspace do `tezos-core` — o nucleo criptografico compartilhado pelo Tezzet e
+# pelo TAPS (SPEC-0001 §1, ADR-0001 §12.4).
+#
+# A divisao em crates nao e organizacao de arquivo: e a fronteira da §1 posta
+# onde o compilador a verifica.
+#
+#   tz-params   constantes criptograficas. Sem dependencia, sem codigo.
+#   tz-rng      a unica crate que fala com o CSPRNG do sistema operacional.
+#   tz-keys     identidade da chave. Deterministico. **Nao toca disco nem SO.**
+#   tz-vault    o cofre. Formato, KDF, AEAD, embrulhos, gravacao atomica.
+#   tz-memscan  o portao de memoria da §9.6.
+#   tz-ipc-guard  o portao da superficie de IPC (residuo de P3.a da ADR §12.1).
+#   tezos-core  fachada: sessao, ciclo de vida, o que o produto consome.
+#
+# `tz-keys` nao depende de `tz-rng`, de `libc` nem de `std::fs`. Isso e testado
+# em `tz-keys/tests/fronteira.rs` — a regra da §1 vira erro de compilacao em vez
+# de observacao de revisao.
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/tz-params",
+    "crates/tz-rng",
+    "crates/tz-keys",
+    "crates/tz-vault",
+    "crates/tz-memscan",
+    "crates/tz-ipc-guard",
+    "crates/tezos-core",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/rafaelbressan/tezzet"
+
+# §9.8 — nenhuma dependencia do caminho da chave com faixa aberta. Toda versao
+# aqui e a que a SPEC-0001 §12.1 verificou, fixada com `=`.
+[workspace.dependencies]
+tz-params = { path = "crates/tz-params" }
+tz-rng = { path = "crates/tz-rng" }
+tz-keys = { path = "crates/tz-keys" }
+tz-vault = { path = "crates/tz-vault" }
+tz-memscan = { path = "crates/tz-memscan" }
+
+zeroize = { version = "=1.9.0", default-features = false, features = ["alloc", "derive"] }
+constant_time_eq = "=0.4.2"
+libc = "=0.2.189"
+
+# Nosso codigo nao chama a `subtle` (SPEC §12.1: falha P4, entra so
+# transitivamente por ed25519-dalek/RustCrypto). `constant_time_eq` e a nossa.
+
+[profile.dev.package."*"]
+# Argon2id de 256 MiB sem otimizacao leva segundos por chamada e os testes de
+# cofre chamam centenas de vezes. Dependencia otimizada, nosso codigo nao — para
+# o backtrace continuar util.
+opt-level = 3
+
+[profile.test]
+opt-level = 1
