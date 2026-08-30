@@ -296,6 +296,43 @@ fn dependencias_do_caminho_da_chave_sao_fixadas() {
     }
 }
 
+/// A versao do compilador e **parte do portao**, e por isso ela e fixada.
+///
+/// Os `.stderr` dos casos `trybuild` de `tz-keys/tests/ui/` sao texto de
+/// diagnostico do rustc, e o rustc reescreve mensagens entre versoes — o 1.95
+/// diz "no variant or associated item named `Custom`" e o 1.98 diz "no variant,
+/// associated function, or constant named `Custom`". A mesma prova, outro
+/// texto. Sem pino, o portao que o **compilador** garante fica vermelho toda
+/// vez que o runner do CI atualiza sozinho, e a saida de menor esforco vira
+/// afrouxar o teste.
+///
+/// Isto foi medido, nao previsto: o primeiro CI deste nucleo ficou vermelho
+/// exatamente assim, com o runner em 1.98 e os `.stderr` gerados em 1.95.
+#[test]
+fn a_versao_do_compilador_esta_fixada() {
+    let p = raiz().join("rust-toolchain.toml");
+    let t = std::fs::read_to_string(&p).unwrap_or_else(|e| {
+        panic!(
+            "ler {}: {e} — sem pino, os `.stderr` do trybuild sao loteria",
+            p.display()
+        )
+    });
+    assert!(
+        t.contains("channel = \""),
+        "o pino nao declara um canal exato"
+    );
+    assert!(
+        !t.contains("stable") && !t.contains("nightly") && !t.contains("beta"),
+        "o canal precisa ser uma versao exata, nao um trem que anda sozinho:\n{t}"
+    );
+    for componente in ["rustfmt", "clippy"] {
+        assert!(
+            t.contains(componente),
+            "o pino nao inclui `{componente}`, que o CI usa"
+        );
+    }
+}
+
 /// §9.8 e item 18 do anti-catalogo — `continue-on-error` e proibido no portao
 /// de seguranca do CI. Hoje o TAPS roda `npm audit` assim, o que faz dele um
 /// portao decorativo.

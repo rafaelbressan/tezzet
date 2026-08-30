@@ -184,12 +184,14 @@ let (sessao, frase) = tezos_core::create_wallet(&loc, &MeuPrompt, None)?;
    importação de chave crua (`spsk`, `p2sk`), não pela mnemônica.
 4. **`tz4` lê e recebe, não assina.** BLS12-381 acrescenta uma primitiva grande
    ao perímetro auditado e a única biblioteca madura é C com FFI (§4.7).
-5. **A §9.6 literal dispara em prosa em inglês.** A regra "3+ palavras
-   consecutivas da wordlist" acusa `"this option can"` — medido no texto de
-   ajuda do próprio `libtest`, num processo sem carteira nenhuma. O veredito usa
-   duas condições mais estreitas e, somadas, mais fortes que o "≥ 8 palavras" do
-   BRES-66; a contagem literal continua no relatório. Está documentado em
-   `tz-memscan/src/lib.rs`, com a medição.
+5. **O item 1 da §9.6 foi emendado por causa desta implementação.** A redação
+   anterior ("3+ palavras consecutivas da wordlist") dispara em prosa em inglês
+   — medido no texto de ajuda do próprio `libtest`, num processo sem carteira
+   nenhuma. A especificação passou a exigir a disjunção de duas regras, mais
+   estreitas em forma e, somadas, mais fortes que o "≥ 8 palavras" do BRES-66;
+   a contagem literal continua obrigatória no relatório. Emenda de 2026-08-30
+   (BRES-41), aprovada por Rafael. Isto **não** é uma limitação da
+   implementação: é o que a §9.6 diz hoje.
 6. **O estimador de força de senha não é zxcvbn.** A crate `zxcvbn` arrasta seis
    dependências transitivas para o caminho da chave, contra a regra de superfície
    mínima da §2.2 N3. O estimador de verdade fica no produto e entra aqui como

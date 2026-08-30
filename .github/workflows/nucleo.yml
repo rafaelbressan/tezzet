@@ -35,6 +35,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # A versao do compilador esta pinada em `core/rust-toolchain.toml`, e o
+      # pino e parte do portao: os `.stderr` dos casos `trybuild` sao texto de
+      # diagnostico do rustc, e o rustc reescreve mensagens entre versoes. Sem
+      # pino, o portao mais forte do repositorio fica vermelho toda vez que o
+      # runner atualiza sozinho — e a saida de menor esforco vira afrouxar o
+      # teste. O `rustc --version` fica no log para o pino ser visivel.
       - name: toolchain
         run: rustup show && rustc --version && cargo --version
 
@@ -78,12 +84,12 @@ jobs:
       # §9.8 — portoes de cadeia de suprimento. Bloqueantes, sem excecao.
       - name: cargo-deny
         run: |
-          cargo install --locked cargo-deny --version 0.18.6
+          cargo install --locked cargo-deny --version 0.20.2
           cargo deny check
 
       - name: cargo-audit
         run: |
-          cargo install --locked cargo-audit --version 0.21.2
+          cargo install --locked cargo-audit --version 0.22.2
           cargo audit
 
   # Os portoes so valem se ficarem vermelhos quando deveriam. Cinco mutantes,

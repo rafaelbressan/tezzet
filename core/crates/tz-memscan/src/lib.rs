@@ -49,10 +49,11 @@
 //!
 //! # A agulha nunca existe em claro dentro deste processo
 //!
-//! Um varredor que guarda a agulha em claro **acha a propria agulha**, e ai
-//! duas coisas quebram: um item de conta-zero reprova sempre, e um item de
-//! controle positivo passa sempre — inclusive quando a varredura leu a regiao
-//! errada, que e exatamente o defeito que o controle existe para pegar.
+//! E o **controle 3** da §9.6. Um varredor que guarda a agulha em claro **acha
+//! a propria agulha**, e ai as duas listas quebram ao mesmo tempo: um item de
+//! conta-zero reprova sempre, e um item de controle positivo passa sempre —
+//! inclusive quando a varredura leu a regiao errada, que e exatamente o defeito
+//! que o controle 2 existe para pegar.
 //!
 //! Por isso toda agulha e guardada **mascarada** (XOR com bytes do CSPRNG) e a
 //! comparacao desmascara byte a byte, sem nunca materializar o texto em claro.
@@ -409,26 +410,27 @@ fn wordlist() -> HashSet<&'static str> {
 ///
 /// Devolve `(literal, so_wordlist, longas)`.
 ///
-/// **Por que a contagem literal nao e o veredito.** A §9.6 emendada pede
-/// "sequencias da wordlist BIP-39 a partir de 3 palavras". A wordlist tem
-/// muitas palavras comuns do ingles, entao a regra literal dispara em prosa
-/// qualquer. Medido: num processo de teste recem-nascido, **sem carteira
-/// nenhuma**, o texto de ajuda do proprio `libtest` produz tres ocorrencias —
-/// `"this option can"`, `"this flag can"`, `"this option can"`. Um portao que
-/// nasce vermelho e desligado na semana seguinte, e ai o portao vira zero.
+/// O veredito e a **disjuncao de duas regras**, como manda a §9.6 emendada em
+/// 2026-08-30 (BRES-41). Qualquer uma satisfeita reprova:
 ///
-/// O veredito usa duas condicoes, e juntas elas sao **mais fortes** que o "≥ 8
-/// palavras" do BRES-66:
+/// - **(a) so-wordlist**: um trecho de texto ASCII contiguo com 3 ou mais
+///   palavras, formado **inteiramente** por palavras da wordlist. E a forma que
+///   uma mnemonica tem quando vaza; prosa nao tem essa forma, porque uma unica
+///   palavra fora da lista quebra o trecho.
+/// - **(b) corrida longa**: 6 ou mais palavras consecutivas da wordlist **em
+///   qualquer contexto**. Pega o fragmento de mnemonica que caiu no meio de
+///   outro buffer, onde a vizinhanca nao e wordlist.
 ///
-/// - **so-wordlist**: o trecho de texto contiguo e formado **inteiramente** por
-///   palavras da wordlist, com 3 ou mais. E a forma de uma mnemonica guardada
-///   como string, e prosa nao tem essa forma.
-/// - **≥ 6 consecutivas**: pega o fragmento de mnemonica que caiu no meio de
-///   outro buffer, onde a vizinhanca nao e wordlist. Seis palavras da wordlist
-///   em fila dentro de prosa nao acontecem por acaso.
+/// **A contagem literal — 3 ou mais consecutivas, em qualquer contexto — e
+/// medida e relatada, e nao e o veredito.** O dado que levou a especificacao a
+/// separar as duas coisas foi medido aqui: num processo de teste recem-nascido,
+/// **sem carteira nenhuma**, o texto de ajuda do proprio `libtest` produz tres
+/// ocorrencias — `"this option can"`, `"this flag can"`, `"this option can"`.
+/// Um portao que nasce vermelho e desligado na semana seguinte.
 ///
-/// A contagem literal continua no relatorio, para o numero da especificacao
-/// ficar visivel em vez de sumir.
+/// As duas regras juntas sao **mais fortes** que o "≥ 8 palavras" do BRES-66:
+/// (a) pega uma mnemonica de 3 palavras que o criterio antigo deixava passar, e
+/// (b) pega em 6 o que o antigo so pegava em 8.
 fn count_bip39(hay: &[u8], words: &HashSet<&'static str>) -> (usize, usize, usize) {
     let (mut literal, mut so_wordlist, mut longas) = (0usize, 0usize, 0usize);
     let mut i = 0usize;

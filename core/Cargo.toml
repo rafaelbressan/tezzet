@@ -37,12 +37,16 @@ repository = "https://github.com/rafaelbressan/tezzet"
 
 # §9.8 — nenhuma dependencia do caminho da chave com faixa aberta. Toda versao
 # aqui e a que a SPEC-0001 §12.1 verificou, fixada com `=`.
+# As crates do proprio workspace levam `version` alem de `path`: sem ela, o
+# `cargo-deny` as conta como dependencia curinga e o portao `bans` reprova — e
+# ele esta certo em reprovar, porque uma dependencia sem versao e uma
+# dependencia que ninguem consegue fixar quando o pacote for publicado.
 [workspace.dependencies]
-tz-params = { path = "crates/tz-params" }
-tz-rng = { path = "crates/tz-rng" }
-tz-keys = { path = "crates/tz-keys" }
-tz-vault = { path = "crates/tz-vault" }
-tz-memscan = { path = "crates/tz-memscan" }
+tz-params = { path = "crates/tz-params", version = "=0.1.0" }
+tz-rng = { path = "crates/tz-rng", version = "=0.1.0" }
+tz-keys = { path = "crates/tz-keys", version = "=0.1.0" }
+tz-vault = { path = "crates/tz-vault", version = "=0.1.0" }
+tz-memscan = { path = "crates/tz-memscan", version = "=0.1.0" }
 
 zeroize = { version = "=1.9.0", default-features = false, features = ["alloc", "derive"] }
 constant_time_eq = "=0.4.2"
