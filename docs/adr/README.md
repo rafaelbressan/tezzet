@@ -6,4 +6,4 @@ Uma ADR registra o que foi decidido, quando, por quem, **quais alternativas fora
 
 | # | Título | Status | Data |
 |---|---|---|---|
-| [0001](0001-stack-unificada-tezzet-taps.md) | Stack unificada da Suíte Tezos (Tezzet + TAPS) | Proposta — critérios pré-registrados, decisão pendente | 2026-08-27 |
+| [0001](0001-stack-unificada-tezzet-taps.md) | Stack unificada da Suíte Tezos (Tezzet + TAPS) | **Aceita** — Tauri v2 + núcleo Rust, com override humano explícito de P5 (§12.3) | 2026-08-30 |
