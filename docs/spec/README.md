@@ -6,7 +6,7 @@ A diferença entre os dois diretórios: uma **ADR** registra uma decisão e as a
 
 | # | Título | Status | Data | Dono |
 |---|---|---|---|---|
-| [0001](0001-nucleo-criptografico-compartilhado.md) | Núcleo criptográfico compartilhado (`tz-keys` + `tz-vault`) | Normativa — passada 1 | 2026-08-27 | Tezos Core & Crypto |
+| [0001](0001-nucleo-criptografico-compartilhado.md) | Núcleo criptográfico compartilhado (`tz-keys` + `tz-vault`) | Normativa — passada 1, emendada (BRES-68) | 2026-08-30 | Tezos Core & Crypto |
 
 ## Regra de revisão
 

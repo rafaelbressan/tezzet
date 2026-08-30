@@ -9,7 +9,7 @@
 | **Origem** | Mandato escrito pelo Tezos Suite Lead em BRES-37, autorizado por Rafael no thread de revisão do spike BRES-36 (`01a045b8`) |
 | **Vale para** | Tezzet e TAPS. Alvos: **Linux, Windows e Android** (ADR-0001 §8 — Apple fora do escopo) |
 | **Relação com a ADR-0001** | Independente. Esta especificação é escrita em **primitivas e parâmetros**, não em linguagem. Ela vale se a stack for Rust e vale se não for. Nomes de biblioteca aparecem só na seção 12, rotulados como *implementação de referência candidata*. |
-| **Emendas** | 2026-08-28 — §11 (custódia do payout do TAPS) e §13 (auditoria externa) reescritas após decisão de Rafael no thread do BRES-37. Nenhum parâmetro criptográfico mudou. |
+| **Emendas** | 2026-08-28 — §11 (custódia do payout do TAPS) e §13 (auditoria externa) reescritas após decisão de Rafael no thread do BRES-37. Nenhum parâmetro criptográfico mudou.<br>2026-08-30 (BRES-68) — §5.2, §5.4, §6.2, §6.3, §9.5, §9.6, §10 e o Apêndice A emendados para resolver os quatro achados do BRES-66. **O formato do arquivo muda** — ver o aviso no início da §5.2. Nenhum algoritmo, parâmetro de KDF ou política de verificação mudou. |
 | **O que ela NÃO decide** | Nada que estivesse pendente na passada 1 continua pendente. O que segue aberto está na §14. |
 
 ---
@@ -284,6 +284,8 @@ Perder (B) não custa nada: cai em (A).
 
 ### 5.2 Formato do arquivo
 
+> **Emenda de 2026-08-30 (BRES-68) — e ela muda o formato, não só o texto.** A entrada da tabela de embrulhos passa de **76 para 77 bytes** fixos, por causa do campo novo `wrap_aead_id`, e o campo `aead_id` do cabeçalho passa a se chamar `body_aead_id` porque descreve o corpo e só ele. Arquivo gravado no formato anterior **não abre**, e não existe migração: apaga e regrava. O único que existe é o artefato descartável do BRES-66, que fica incompatível — é melhor saber agora. `format_version` continua `0x01` porque não há usuário em produção (BRES-35); ele só passa a andar quando existir cofre de alguém lá fora.
+
 Todos os inteiros são **little-endian**. Todos os offsets em hexadecimal.
 
 **Header — 48 bytes, tamanho fixo**
@@ -294,7 +296,7 @@ Todos os inteiros são **little-endian**. Todos os offsets em hexadecimal.
 | `0x06` | 1 | `format_version` | `0x01` |
 | `0x07` | 1 | `kdf_id` | `0x01` = Argon2id, versão `0x13` |
 | `0x08` | 1 | `profile_id` | `0x01` = `v1-mobile`, `0x02` = `v1-desktop` |
-| `0x09` | 1 | `aead_id` | `0x01` = XChaCha20-Poly1305, `0x02` = AES-256-GCM |
+| `0x09` | 1 | `body_aead_id` | AEAD **do corpo, e só dele**. `0x01` = XChaCha20-Poly1305, `0x02` = AES-256-GCM. O AEAD de cada embrulho vai em `wrap_aead_id`, abaixo |
 | `0x0A` | 1 | `wrap_count` | 1 a 3 |
 | `0x0B` | 1 | `reserved` | `0x00`. Leitor **recusa** valor diferente |
 | `0x0C` | 4 | `argon2_m_kib` | memória em KiB |
@@ -303,30 +305,44 @@ Todos os inteiros são **little-endian**. Todos os offsets em hexadecimal.
 | `0x18` | 16 | `kdf_salt` | **aleatório por cofre**, do CSPRNG do SO |
 | `0x28` | 8 | `created_at` | segundos Unix. Metadado, não secreto |
 
-**Tabela de embrulhos — `wrap_count` entradas, 76 bytes + `ctx_len` cada**
+**Tabela de embrulhos — `wrap_count` entradas, 77 bytes + `ctx_len` cada**
 
 | Offset | Tam. | Campo | Regra |
 |---|---|---|---|
 | `+0x00` | 1 | `wrap_type` | `0x01` = `KEK_pass`, `0x02` = `KEK_hw`, `0x03` = `KEK_prf` (reservado) |
-| `+0x01` | 1 | `wrap_flags` | bit 0 = obrigatório na abertura |
-| `+0x02` | 2 | `ctx_len` | comprimento do contexto opaco |
-| `+0x04` | 24 | `wrap_nonce` | **aleatório por gravação** |
-| `+0x1C` | 32 | `wrapped_dek` | ciphertext da DEK |
-| `+0x3C` | 16 | `wrap_tag` | tag de autenticação |
-| `+0x4C` | `ctx_len` | `ctx` | alias da chave no Keystore, handle do TPM, credential id do WebAuthn. **Nunca segredo** |
+| `+0x01` | 1 | `wrap_flags` | bit 0 = obrigatório na abertura. Bits 1–7 **DEVEM** ser `0`; leitor recusa |
+| `+0x02` | 1 | `wrap_aead_id` | AEAD **deste embrulho**. Mesma tabela do `body_aead_id`: `0x01` = XChaCha20-Poly1305, `0x02` = AES-256-GCM. Valor desconhecido: leitor recusa |
+| `+0x03` | 2 | `ctx_len` | comprimento do contexto opaco |
+| `+0x05` | 24 | `wrap_nonce` | **novo por gravação**. Largura útil pelo `wrap_aead_id` — ver "Largura do nonce" abaixo |
+| `+0x1D` | 32 | `wrapped_dek` | ciphertext da DEK |
+| `+0x3D` | 16 | `wrap_tag` | tag de autenticação |
+| `+0x4D` | `ctx_len` | `ctx` | alias da chave no Keystore, handle do TPM, credential id do WebAuthn. **Nunca segredo** |
 
-Cada embrulho: `AEAD(chave = KEK_x, nonce = wrap_nonce, aad = header ‖ wrap_type ‖ wrap_flags ‖ ctx, texto = DEK)`.
+Cada embrulho: `AEAD_w(chave = KEK_x, nonce = wrap_nonce, aad = header ‖ wrap_type ‖ wrap_flags ‖ wrap_aead_id ‖ ctx, texto = DEK)`, onde `AEAD_w` é o algoritmo declarado no `wrap_aead_id` **daquela entrada**.
+
+**Por que o AEAD é por embrulho, e não um por arquivo.** Um cofre de Android tem, ao mesmo tempo, corpo em XChaCha20-Poly1305 (§5.4) e embrulho `KEK_hw` em AES-256-GCM, porque é isso que o AndroidKeyStore faz (§6.3). Um `aead_id` só no cabeçalho não descreve esse arquivo. As duas saídas possíveis eram declarar o AEAD por embrulho ou dizer que `wrap_type = 0x02` implica AES-256-GCM — a segunda **está errada**: no Windows o `KEK_hw` também é `wrap_type = 0x02`, mas a KEK sai do `KeyCredentialManager` para o nosso processo e o embrulho é XChaCha20-Poly1305 (§6.2). O algoritmo não é função do tipo de embrulho, então ele é escrito. Um byte compra um arquivo autodescritivo; a alternativa é precisar saber qual plataforma gravou para saber como ler.
+
+`wrap_aead_id` entra na AAD junto com `wrap_type` e `wrap_flags`: **toda escolha de algoritmo é autenticada**, sem exceção.
 
 **Corpo**
 
 | Offset | Tam. | Campo |
 |---|---|---|
-| `+0x00` | 24 | `body_nonce` — **aleatório por gravação** |
+| `+0x00` | 24 | `body_nonce` — **novo por gravação**. Largura útil pelo `body_aead_id` |
 | `+0x18` | 4 | `body_len` — comprimento do ciphertext, sem a tag |
 | `+0x1C` | `body_len` | `body_ct` |
 | — | 16 | `body_tag` |
 
-Corpo: `AEAD(chave = DEK, nonce = body_nonce, aad = header ‖ tabela de embrulhos inteira, texto = payload)`.
+Corpo: `AEAD(chave = DEK, nonce = body_nonce, aad = header ‖ tabela de embrulhos inteira, texto = payload)`, com o AEAD declarado em `body_aead_id`.
+
+**Largura do nonce — o campo tem sempre 24 bytes, o algoritmo decide quantos valem.** `wrap_nonce` e `body_nonce` são campos fixos de 24 bytes em qualquer combinação de algoritmos:
+
+| AEAD | Bytes usados | Onde | Resto do campo |
+|---|---|---|---|
+| XChaCha20-Poly1305 (`0x01`) | 24 | `[0x00..0x17]` | — |
+| AES-256-GCM (`0x02`) | **12** | `[0x00..0x0B]`, **alinhado à esquerda** | `[0x0C..0x17]` **DEVE** ser zero |
+
+O leitor **DEVE recusar** o arquivo, com erro tipado e **antes de rodar o KDF** (junto com as validações da §5.6), se algum byte do preenchimento não for zero. O campo não encolhe porque **o tamanho de uma entrada não pode depender do algoritmo** — parser de tamanho variável é onde nascem os bugs de parser, e 12 bytes por embrulho é preço barato demais para discutir. Exigir zero e recusar o não-zero fecha, de graça, um canal de 12 bytes por embrulho para esconder metadado.
 
 **Payload em claro — sempre 128 bytes, com preenchimento**
 
@@ -377,14 +393,27 @@ Medição anterior, mesma configuração, `argon2` 0.5 single-thread (BRES-36): 
 
 | Item | Decisão |
 |---|---|
-| Padrão | **XChaCha20-Poly1305** (`aead_id = 0x01`) |
+| Padrão | **XChaCha20-Poly1305** (`0x01`) |
 | Chave | 256 bits |
-| Nonce | **24 bytes, aleatórios por gravação** |
+| Nonce | **Novo a cada gravação.** Campo de 24 bytes — largura útil na linha abaixo |
 | Tag | 16 bytes |
-| Alternativa aceita | AES-256-GCM (`aead_id = 0x02`), **somente** com nonce de 12 bytes aleatório e limite de 2³² gravações por chave |
-| Política de nonce | Aleatório a cada gravação, sempre. **Nunca** contador, **nunca** derivado do conteúdo, **nunca** reutilizado numa regravação. Se o CSPRNG falhar, **aborta** |
+| Alternativa aceita | AES-256-GCM (`0x02`), **somente** com nonce de 12 bytes aleatório e limite de 2³² gravações por chave |
+| Escopo da escolha | **Por região, não por arquivo.** `body_aead_id` vale para o corpo; cada embrulho declara o seu em `wrap_aead_id` (§5.2). Um cofre pode e vai ter os dois algoritmos ao mesmo tempo |
+| Largura do nonce | 24 bytes de campo sempre; 24 úteis no XChaCha20, 12 no AES-GCM, resto em zero e recusado se não for (§5.2) |
+| Política de nonce | Aleatório a cada gravação, sempre. **Nunca** contador, **nunca** derivado do conteúdo, **nunca** reutilizado numa regravação. Se o CSPRNG falhar, **aborta**. Exceção única e escrita: o embrulho executado **dentro** do cofre de chaves do SO — abaixo |
 
 **Por que XChaCha20 e não AES-GCM como padrão:** o nonce de 24 bytes torna a colisão por acaso irrelevante (~2⁹⁶ de margem), o que permite gerar nonce aleatório sem contabilidade de estado — e contabilidade de estado é exatamente o que se erra. Além disso, ChaCha20 não depende de AES-NI, o que importa num Android de entrada. AES-256-GCM continua aceito porque em algumas plataformas ele é o que o hardware acelera; com nonce de 12 bytes aleatório o limite de 2³² gravações é folgado para um cofre, mas o limite **precisa estar escrito** para não ser descoberto depois.
+
+**A única exceção à regra "o nonce é nosso" — escrita aqui para não ser inventada depois.** Quando o embrulho é executado **dentro** de um cofre de chaves do sistema operacional que sorteia o IV ele mesmo, o nonce não é gerado por nós. O caso concreto — e o único da v1 — é o `KEK_hw` do Android: a chave do AndroidKeyStore é criada com `setRandomizedEncryptionRequired(true)`, e quem sorteia o IV de 12 bytes do AES-256-GCM é o Keystore. A regra "se o CSPRNG falhar, aborta" **não tem como ser cumprida nesse embrulho**, porque não é o nosso CSPRNG que roda. Isso não é defeito; é a fronteira do mecanismo, e ela vale a pena: em troca, a chave nunca entra no nosso processo.
+
+O que vale nesse embrulho, e só nele:
+
+- A implementação **NÃO DEVE** fornecer IV próprio, e **NÃO DEVE** desligar `setRandomizedEncryptionRequired(true)` para poder fornecer. Desligar é exatamente o que reintroduz reúso de nonce, e está proibido pelo item 19 da §10.
+- A implementação **DEVE** ler de volta o IV que a plataforma produziu (`Cipher.getIV()`) e gravá-lo em `wrap_nonce`, alinhado à esquerda, resto em zero.
+- A implementação **DEVE** recusar a gravação se o IV devolvido não tiver exatamente 12 bytes, ou se for todo zero. Não confiamos cegamente; conferimos o que veio.
+- Toda gravação continua produzindo um embrulho novo e, portanto, um IV novo. Muda **quem sorteia**, não **com que frequência**.
+
+Em todo o resto — corpo, `KEK_pass`, e inclusive o `KEK_hw` do **Windows**, onde a KEK sai do `KeyCredentialManager` para o nosso processo e a cifra roda aqui (§6.2) — o nonce é nosso, vem do CSPRNG do SO, e a linha da tabela vale sem exceção.
 
 **Não existe hash de verificação separado.** A tag do AEAD **é** a verificação da senha: senha errada → `KEK_pass` errada → o desembrulho da DEK falha na tag. Isso substitui o `walletHash` SHA-512 do TAPS por algo que é ao mesmo tempo mais forte e mais simples, e elimina de vez a comparação com `===`.
 
@@ -464,6 +493,7 @@ As respostas são diferentes por plataforma e a especificação admite isso em v
 | Perfil | `v1-desktop` |
 | Embrulhos | `KEK_pass` + `KEK_hw` |
 | `KEK_hw` | **`KeyCredentialManager`** (Windows Hello), que devolve uma **chave respaldada por TPM**, não um booleano |
+| AEAD do embrulho | **XChaCha20-Poly1305** (`wrap_aead_id = 0x01`). A KEK chega ao nosso processo e a cifra roda aqui, então o nonce é **nosso**, de 24 bytes, sem a exceção da §5.4 |
 | Prompt | `UserConsentVerifier.RequestVerificationAsync` — diálogo nativo do Hello (face, digital ou **PIN do Hello**) |
 | Backup | Excluído dos perfis de sincronização; nunca em `%APPDATA%` roaming |
 
@@ -480,9 +510,12 @@ As respostas são diferentes por plataforma e a especificação admite isso em v
 | Perfil | `v1-mobile` |
 | Embrulhos | `KEK_pass` + `KEK_hw` |
 | `KEK_hw` | Chave AES-256-GCM no **AndroidKeyStore**, com `setUserAuthenticationRequired(true)`, `setInvalidatedByBiometricEnrollment(true)`, `setUserAuthenticationParameters(0, AUTH_BIOMETRIC_STRONG \| AUTH_DEVICE_CREDENTIAL)`, e `setIsStrongBoxBacked(true)` quando o aparelho oferecer |
+| AEAD do embrulho | **AES-256-GCM** (`wrap_aead_id = 0x02`) — é o que o AndroidKeyStore faz. IV de 12 bytes **sorteado pelo Keystore** (`setRandomizedEncryptionRequired(true)`), lido de volta e gravado alinhado à esquerda em `wrap_nonce`: exceção única da §5.4 |
 | Prompt | `BiometricPrompt` — diálogo do SO; a webview não lê nem imita |
 | Telas | `FLAG_SECURE` em **toda** tela que mostre mnemônica, endereço destravado ou saldo |
 | Relatório | O app **DEVE** registrar `KeyInfo.getSecurityLevel()` do aparelho. StrongBox não é obrigatório; **TEE basta**. Obrigatório é o app **saber e dizer** qual dos dois |
+
+**Este é o cofre com dois AEADs, e é ele que motiva a §5.2.** No Android, o mesmo arquivo tem `body_aead_id = 0x01` (XChaCha20-Poly1305 no corpo, porque um Android de entrada não tem AES-NI), `KEK_pass` com `wrap_aead_id = 0x01`, e `KEK_hw` com `wrap_aead_id = 0x02`. Não é inconsistência: é a plataforma decidindo o que ela sabe fazer, com o arquivo dizendo qual foi.
 
 **A demonstração que vale é negativa** (ADR-0001 §3.1.3): matar o app, negar o prompt biométrico e mostrar **falha de desembrulho** — não uma tela que não abre. E puxar o arquivo por `adb` mostrando-o opaco. Uma trava que é visibilidade de layout é exatamente o achado do Tezzet reimportado com nome melhor.
 
@@ -606,19 +639,63 @@ O relatório de build de cada alvo **nomeia** a chamada de sistema que produziu 
 - Um bit virado em qualquer posição — header, `ctx`, embrulho, corpo — → falha de abertura. Teste varre todas as regiões.
 - Parâmetros fora da faixa do §5.6 → recusa **sem rodar o KDF** (medido por tempo).
 - 10.000 gravações → 10.000 nonces distintos, `body` e `wrap`.
+- **Dois AEADs no mesmo cofre:** um cofre no perfil Android (`body_aead_id = 0x01`, `KEK_pass` com `wrap_aead_id = 0x01`, `KEK_hw` com `wrap_aead_id = 0x02`) abre pelos **dois** caminhos, e o vetor de bytes desse arquivo entra fixo no repositório de testes.
+- `wrap_aead_id` ou `body_aead_id` desconhecido → recusa com erro tipado, **sem rodar o KDF**.
+- `wrap_aead_id` trocado por outro valor **válido** → falha de abertura, porque está na AAD.
+- Nonce de AES-256-GCM com qualquer byte não-zero em `[0x0C..0x17]` → recusa, **sem rodar o KDF** (medido por tempo, como o §5.6).
+- `wrap_flags` com qualquer bit de 1 a 7 ligado → recusa.
+- Android: o IV do embrulho `KEK_hw` gravado no arquivo é **igual** ao `Cipher.getIV()` devolvido pelo Keystore, e duas gravações seguidas produzem IVs diferentes.
 - Reencriptação oportunista: cofre `v1-mobile` aberto no desktop vira `v1-desktop`; o arquivo antigo, guardado em cópia, continua abrindo.
 - Gravação atômica: interrupção simulada em cada passo do §5.8 deixa um cofre íntegro.
 - **Fuzzing do parser do cofre** — nenhuma entrada causa pânico, laço infinito ou alocação ilimitada.
 - Android: negar o prompt biométrico faz o **desembrulho falhar**; o arquivo puxado por `adb` é opaco.
 
 ### 9.6 Memória — o scanner do spike vira portão
-Depois de `unlock` + assinatura, um varredor sobre o dump do processo mostra:
 
-- **zero** sequências da wordlist BIP-39;
-- **zero** ocorrências do material `edsk`;
-- **e o controle positivo é obrigatório:** o **endereço** e a **chave pública** **DEVEM** aparecer no dump.
+**Por que este item foi reescrito.** A redação anterior dizia "zero ocorrências do material `edsk`", e isso admitia duas leituras honestas com vereditos opostos: a forma base58 `edsk…` (o que o varredor do BRES-66 conta) ou o escalar cru de 32 bytes. Pela segunda leitura, um cofre **correto** seria reprovado, porque a §5.9 **manda** o cofre aberto guardar exatamente a DEK e o escalar. Uma especificação assim produz, mais cedo ou mais tarde, uma revisão aprovando o que a outra reprovaria. As listas abaixo substituem a frase, e são exaustivas: o que não está nelas não é veredito.
 
-Sem o controle positivo, um dump vazio passa por engano — o varredor pode estar simplesmente lendo a região errada. Este teste é o melhor subproduto do spike BRES-36 e entra como **regressão permanente**, não demonstração de uma vez.
+O portão roda em **duas fases sobre o mesmo processo**, com dump completo em cada uma.
+
+**Fase 1 — cofre aberto, depois de `unlock` + uma assinatura.**
+
+Conta **zero**. Qualquer ocorrência reprova:
+
+| # | O que o varredor procura | Por que não pode estar lá |
+|---|---|---|
+| 1 | Sequências de 3 ou mais palavras consecutivas da wordlist BIP-39 | §7.1.4 — a mnemônica só existe na criação e na importação |
+| 2 | As formas **base58** de chave privada: `edsk…` de 32 B e de 64 B, `spsk…`, `p2sk…` | Nenhum caminho de execução codifica chave privada em base58. Se apareceu, alguém formatou segredo em string — e é isso, e só isso, que "material `edsk`" queria dizer |
+| 3 | Os bytes da passphrase digitada | §5.9 — zerada assim que a `KEK_pass` sai do Argon2id |
+| 4 | A `KEK_pass` — os 32 B de saída do Argon2id | §5.9 — zerada logo depois de desembrulhar a DEK |
+| 5 | A semente BIP-39 de 64 bytes | §5.9 — zerada depois da derivação |
+| 6 | O payload de 128 bytes em claro da §5.2, como sequência inteira | Zerado depois da extração (Apêndice A) |
+
+Aparece **pelo menos uma vez**. A ausência reprova — este é o controle positivo, e ele não é opcional:
+
+| # | O que o varredor procura | Por que precisa estar lá |
+|---|---|---|
+| 7 | O endereço (`tz1…`) | Prova que a varredura alcançou a região certa do processo |
+| 8 | A chave pública (`edpk…`) | Idem |
+| 9 | O **escalar privado cru de 32 bytes** | §5.9 — **é legítimo**: é o que a sessão aberta guarda para assinar |
+| 10 | A **DEK de 32 bytes** | §5.9 — **é legítima** enquanto o cofre está aberto |
+
+Os itens 9 e 10 são o lado que faltava. Com o cofre aberto, o escalar e a DEK **têm que estar** em memória; um varredor que os conte como vazamento está reprovando o desenho, não um defeito.
+
+**Fase 2 — mesmo processo, depois de trancar.** Roda `lock` (ou deixa estourar o *timeout* da §5.9) e varre de novo:
+
+- os itens **9 e 10 passam a contar zero**;
+- os itens 1 a 6 continuam em zero;
+- os itens 7 e 8 continuam presentes, e continuam sendo o controle positivo.
+
+É a fase 2 que dá sentido à permissão da fase 1: o escalar é legítimo **enquanto o cofre está aberto**, não para sempre. Sem ela, "é legítimo estar em memória" viraria licença permanente e a §5.9 não teria teste nenhum.
+
+**Dois controles do varredor, nenhum opcional:**
+
+1. **O varredor funciona** — num processo separado, senão contamina o dump, planta-se uma mnemônica viva no heap e ele **acha**. Sem isso, "zero ocorrências" pode ser simplesmente um varredor quebrado.
+2. **A varredura alcança a região certa** — itens 7 e 8, obrigatórios nas duas fases.
+
+**O que este portão não é.** Ele não prova que não sobrou cópia: a §7.3 já diz que essa prova não existe em sistema operacional de propósito geral, e nada aqui a contradiz. Ele é **regressão** — pega a cópia que o **nosso** código deixou para trás. Se uma dependência do caminho da chave retiver uma cópia que não conseguimos zerar, o portão **não é afrouxado**: a dependência é **nomeada** no relatório de build e o caso sobe para Tezos Core & Crypto, como o `bip39` do BRES-36 subiu.
+
+Este teste é o melhor subproduto do spike BRES-36, virou código de biblioteca chamado pelo CI e pelo app no BRES-66, e entra como **regressão permanente**, não demonstração de uma vez.
 
 ### 9.7 Fronteira
 - Enumeração exaustiva da superfície de comandos, com o tipo de retorno de cada um, **incluindo o ramo de erro**.
@@ -658,6 +735,8 @@ Escrito assim para que uma revisão possa ser feita com esta lista na mão.
 | 16 | Assinar bytes sem watermark tipado, ou com `Custom` | risco estrutural, ADR-0001 §7.7 |
 | 17 | Segredo cruzando serialização | ver §12.1 — acontece por **default de biblioteca**, sem ninguém escrever nada errado |
 | 18 | `npm audit` / `cargo audit` com `continue-on-error` | TAPS, CI atual |
+| 19 | Desligar `setRandomizedEncryptionRequired(true)` no AndroidKeyStore para poder fornecer IV próprio | risco estrutural, §5.4 |
+| 20 | Campo de nonce com preenchimento não-zero aceito na leitura | risco estrutural, §5.2 |
 
 ---
 
@@ -854,17 +933,26 @@ ABRIR(caminho, obter_passphrase, obter_kek_hw):
     exigir header.magic == "TZVLT\0"
     exigir header.format_version == 0x01
     exigir header.reserved == 0x00
-    exigir header.kdf_id, header.aead_id, header.profile_id conhecidos
+    exigir header.kdf_id, header.body_aead_id, header.profile_id conhecidos
     exigir faixa(header.argon2_m_kib, header.argon2_t, header.argon2_p)     # §5.6
     exigir params == tabela_de_perfis[header.profile_id]
 
     wraps ← parse_wraps(bytes, header.wrap_count)                          # recusa ctx_len absurdo
+    para w em wraps:
+        exigir w.wrap_aead_id conhecido                                     # §5.2
+        exigir w.wrap_flags com os bits 1..7 em zero                        # §5.2
+        exigir nonce_bem_formado(w.wrap_nonce, w.wrap_aead_id)              # 12 B + 12 zeros no AES-GCM  §5.2
 
     # (2) tenta o embrulho de hardware primeiro; passphrase é sempre o fallback
     dek ← nulo
     para w em wraps onde w.tipo == KEK_hw:
-        kek ← obter_kek_hw(w.ctx)                                          # prompt NATIVO do SO
-        dek ← aead_abrir(kek, w.nonce, aad(header, w), w.ct ‖ w.tag)  ou  nulo
+        se w.abre_dentro_do_cofre_do_SO:            # Android — a chave nunca sai  §5.4
+            # prompt NATIVO do SO, com o Cipher preso ao BiometricPrompt por CryptoObject
+            dek ← abrir_no_cofre_do_SO(w.ctx, w.nonce[0..12], aad(header, w), w.ct ‖ w.tag)  ou  nulo
+        senão:
+            kek ← obter_kek_hw(w.ctx)                                      # prompt NATIVO do SO
+            dek ← aead_abrir(kek, w.nonce, aad(header, w), w.ct ‖ w.tag)  ou  nulo
+            zerar(kek)
     se dek == nulo:
         pass ← obter_passphrase()                                          # prompt NATIVO do SO
         kek  ← Argon2id(pass, header.kdf_salt, params do header) → 32 B
@@ -875,6 +963,7 @@ ABRIR(caminho, obter_passphrase, obter_kek_hw):
         se dek == nulo: recusar(ErroDeAbertura)     # MESMO erro de adulteração — sem oráculo
 
     corpo   ← parse_corpo(bytes)
+    exigir nonce_bem_formado(corpo.nonce, header.body_aead_id)              # §5.2
     payload ← aead_abrir(dek, corpo.nonce, aad(header, wraps), corpo.ct ‖ corpo.tag)
     se payload == nulo: recusar(ErroDeAbertura)
 
@@ -890,17 +979,24 @@ ABRIR(caminho, obter_passphrase, obter_kek_hw):
 GRAVAR(caminho, segredo, perfil, embrulhos):
     salt ← csprng(16)          # falha do CSPRNG ⇒ ABORTA, nunca degrada
     dek  ← csprng(32)          # DEK nova a cada gravação
-    header ← montar(magic, v1, kdf_id, perfil, aead_id, |embrulhos|, params[perfil], salt, agora)
+    header ← montar(magic, v1, kdf_id, perfil, body_aead_id, |embrulhos|, params[perfil], salt, agora)
 
     para cada e em embrulhos:
-        kek ← (e.tipo == KEK_pass) ? Argon2id(pass, salt, params[perfil]) : chave_do_SO(e.ctx)
-        e.nonce ← csprng(24)                       # nonce novo, sempre
-        e.ct, e.tag ← aead_selar(kek, e.nonce, aad(header, e), dek)
-        zerar(kek)
+        se e.sela_dentro_do_cofre_do_SO:            # Android KEK_hw — exceção única  §5.4
+            e.ct, e.tag, iv ← selar_no_cofre_do_SO(e.ctx, aad(header, e), dek)
+            exigir |iv| == 12 e iv ≠ zeros         # o SO sorteou; nós conferimos
+            e.nonce ← iv ‖ zeros(12)               # alinhado à esquerda  §5.2
+        senão:
+            kek ← (e.tipo == KEK_pass) ? Argon2id(pass, salt, params[perfil]) : chave_do_SO(e.ctx)
+            n   ← largura(e.wrap_aead_id)          # 24 no XChaCha20, 12 no AES-GCM
+            e.nonce ← csprng(n) ‖ zeros(24 − n)    # nonce novo, sempre; falha do CSPRNG ⇒ ABORTA
+            e.ct, e.tag ← aead_selar(kek, e.nonce[0..n], aad(header, e), dek)
+            zerar(kek)
 
     payload ← montar_payload_128B(segredo, curva, esquema, caminho_de_derivacao)
-    corpo.nonce ← csprng(24)
-    corpo.ct, corpo.tag ← aead_selar(dek, corpo.nonce, aad(header, embrulhos), payload)
+    nb ← largura(header.body_aead_id)
+    corpo.nonce ← csprng(nb) ‖ zeros(24 − nb)
+    corpo.ct, corpo.tag ← aead_selar(dek, corpo.nonce[0..nb], aad(header, embrulhos), payload)
     zerar(payload); zerar(dek)
 
     escrita_atomica(caminho, header ‖ embrulhos ‖ corpo)                    # §5.8
