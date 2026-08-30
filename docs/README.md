@@ -40,6 +40,16 @@ Relatório de spike não é documentação de produto, mas é o que sustenta uma
 | `ANALYSIS.md` no repositório do **TAPS** | Análise do TAPS: o que impede o sistema de rodar, segurança, correção financeira |
 | `docs/spec/REGRAS-DE-NEGOCIO.md` no repositório do **TAPS** | As regras de negócio extraídas do sistema original — o ativo mais valioso daquele repositório |
 
+## Implementação do núcleo
+
+Uma SPEC define o comportamento; este é o código que a cumpre, com os portões da §9 rodando no CI desde o primeiro commit — que é o que a §13 exige em troca do adiamento da auditoria externa.
+
+| Diretório | O que é |
+|---|---|
+| [`../core/`](../core/) | `tezos-core`: o núcleo criptográfico compartilhado por Tezzet e TAPS, em Rust. O [`README`](../core/README.md) diz **o que a API garante e o que ela não garante**, item por item |
+
+`core/` fica na raiz pelo mesmo motivo de `suite/`: ele é consumido como dependência pelos dois produtos, não lido como documentação.
+
 ## Identidade compartilhada
 
 | Diretório | O que é |
