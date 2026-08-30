@@ -14,12 +14,23 @@
 
 name: nucleo
 
+# `push` so na `master`, e `pull_request` no resto. Sem isto, um push para o
+# branch de um PR aberto dispara os dois gatilhos e o portao inteiro roda duas
+# vezes sobre o mesmo commit — o dobro do custo, e dois resultados para ler onde
+# ha uma so verdade.
 on:
   push:
+    branches: [master]
     paths: ['core/**', '.github/workflows/nucleo.yml']
   pull_request:
     paths: ['core/**', '.github/workflows/nucleo.yml']
   workflow_dispatch:
+
+# Um push novo cancela a corrida anterior do mesmo branch: o que interessa e o
+# veredito do commit de cima, nao a fila.
+concurrency:
+  group: nucleo-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
