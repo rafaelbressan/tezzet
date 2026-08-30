@@ -10,7 +10,7 @@ Uma ADR registra o que foi decidido, quando, por quem, quais alternativas foram 
 
 | # | Documento | Status |
 |---|---|---|
-| ADR-0001 | [Stack unificada da Suíte Tezos](adr/0001-stack-unificada-tezzet-taps.md) | Proposta — critérios pré-registrados, decisão pendente |
+| ADR-0001 | [Stack unificada da Suíte Tezos](adr/0001-stack-unificada-tezzet-taps.md) | **Aceita** — Tauri v2 + núcleo Rust, aprovado em 2026-08-30 com override humano explícito de P5 |
 
 Índice completo e as regras do formato: [`adr/README.md`](adr/README.md).
 
@@ -23,6 +23,14 @@ Uma SPEC define o comportamento que o código precisa ter e os testes que provam
 | SPEC-0001 | [Núcleo criptográfico compartilhado (`tz-keys` + `tz-vault`)](spec/0001-nucleo-criptografico-compartilhado.md) | Tezos Core & Crypto |
 
 Índice e regra de revisão: [`spec/README.md`](spec/README.md).
+
+## Evidência das medições
+
+Relatório de spike não é documentação de produto, mas é o que sustenta uma ADR. Sem ele, "P5 atendido no mecanismo" é afirmação sem lastro para quem chegar depois. Fica em `master` pela mesma regra do topo desta página.
+
+| Documento | O que sustenta |
+|---|---|
+| [`evidence/BRES-66-medicao-p5.md`](evidence/BRES-66-medicao-p5.md) | A medição que fechou P3.b/c/e, a entropia de P4 e P5 — incluindo o resultado ruim: `KeyInfo.getSecurityLevel() = Software` no emulador e `setInvalidatedByBiometricEnrollment(true)` sem efeito. É a base da ADR-0001 §12 e do BRES-67. |
 
 ## Análise dos sistemas herdados
 
