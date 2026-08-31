@@ -21,6 +21,7 @@ Uma SPEC define o comportamento que o código precisa ter e os testes que provam
 | # | Documento | Dono |
 |---|---|---|
 | SPEC-0001 | [Núcleo criptográfico compartilhado (`tz-keys` + `tz-vault`)](spec/0001-nucleo-criptografico-compartilhado.md) | Tezos Core & Crypto |
+| SPEC-0002 | [Camada de cadeia (`@tezos-suite/chain`)](spec/0002-camada-de-cadeia.md) | Tezos Chain & Payouts |
 
 Índice e regra de revisão: [`spec/README.md`](spec/README.md).
 
