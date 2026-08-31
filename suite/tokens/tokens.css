@@ -19,6 +19,14 @@
   --c-attention:  #8A6A1F;
   --c-negative:   #8C2F2F;
 
+  /* Sobre fundo escuro. Razões conferidas por tokens/contrast.mjs. */
+  --c-paper-dim:   #CFCFCF;  /* 12,71:1 sobre ink — texto corrido      */
+  --c-steel-dim:   #9A9A9A;  /*  7,04:1 sobre ink — texto secundário   */
+  --c-steel-faint: #7A7A7A;  /*  4,61:1 sobre ink — rodapé, >= 16px    */
+  /* Réguas decorativas. Nenhuma das duas separa dois blocos sozinha. */
+  --c-rule-dark:   #333333;  /*  1,57:1 sobre ink   */
+  --c-hairline:    #D5D5D5;  /*  1,25:1 sobre paper */
+
   /* --- tipografia ------------------------------------------ */
   --f-display: 'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif;
   --f-body:    'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -108,18 +116,26 @@
 .t-status--simulated { color: var(--c-steel-deep); }
 .t-status--failed    { color: var(--c-negative);  }
 
-/* Número de ciclo. Prefixo fixo para nunca virar um número solto. */
-.t-cycle { font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+/* Número de ciclo. Prefixo fixo para nunca virar um número solto — e por
+   isso mesmo nunca quebra linha: "ciclo" numa linha e "1338" na seguinte
+   devolve o número solto que o prefixo existe para evitar. */
+.t-cycle { font-family: var(--f-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .t-cycle::before { content: "ciclo "; color: var(--c-steel-deep); font-size: 0.85em; }
 
-/* Selo de rede. Ghostnet precisa gritar; mainnet fica quieta. */
+/* Selo de rede. A classe diz a NATUREZA da rede; o nome vem da rede, em texto.
+   Ghostnet foi desligada e a v1.0.0 tinha o nome dela cravado aqui — que é
+   exatamente o erro que a suíte proíbe no código: constante de rede escrita
+   na fonte. Hoje as redes de teste são Shadownet (Tezzet) e Bakingnet (TAPS),
+   e amanhã serão outras. A folha de estilo não precisa saber disso. */
 .t-network {
   font-family: var(--f-body); font-size: var(--t-xs); font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.12em;
   padding: var(--s-1) var(--s-2); border-radius: var(--radius);
 }
-.t-network--mainnet { color: var(--c-steel-deep); border: 1px solid var(--c-steel); }
-.t-network--ghostnet { color: var(--c-ink); background: var(--c-gold); }
+/* Rede real: fica quieta. É o estado normal e não deve chamar atenção. */
+.t-network--main { color: var(--c-steel-deep); border: 1px solid var(--c-steel); }
+/* Rede de teste: grita. O dourado aqui é preenchimento, não letra. */
+.t-network--test { color: var(--c-ink); background: var(--c-gold); }
 
 /* Botão. O dourado entra pelo corte, no ângulo do logotipo. */
 .t-button {
@@ -173,6 +189,8 @@
   background: transparent; color: var(--c-ink);
   transition: border-color var(--m-fast) var(--m-ease);
 }
+/* gold-deep sobre surface dá 3,17:1 e passa como elemento não-textual;
+   sobre paper dá 2,71:1 e não passa. Campo vai sobre surface, sempre. */
 .t-field__input:focus { outline: none; border-bottom-color: var(--c-gold-deep); }
 .t-field__hint { font-family: var(--f-body); font-size: var(--t-xs); color: var(--c-steel-deep); margin-top: var(--s-2); }
 .t-field__error { font-family: var(--f-body); font-size: var(--t-xs); color: var(--c-negative); margin-top: var(--s-2); }
@@ -186,8 +204,145 @@
   padding: var(--s-6);
 }
 
-/* Foco visível em qualquer lugar. Não negociável. */
+/* ============================================================
+   Estado do dado de cadeia
+   A regra "falte alto" traduzida para a tela: um número visível é
+   sempre um número que foi lido. Nunca um zero de espera, nunca um
+   zero de falha. Foi um `|| 0` num campo de API que fez o TAPS pagar
+   zero a todos os delegadores, em silêncio — estas quatro primitivas
+   existem para que a interface não repita isso.
+   ============================================================ */
+
+/* CARREGANDO — barra na forma do número que vai chegar. */
+.t-skeleton {
+  display: inline-block; vertical-align: middle; box-sizing: border-box;
+  width: var(--skeleton-w, 9ch); height: 1.15em;
+  background: var(--c-hairline);
+  /* A borda é o que torna a barra perceptível: hairline sobre surface dá
+     1,47:1, abaixo do mínimo de 3:1 para elemento não-textual que carrega
+     informação. steel sobre surface dá 5,41:1 e resolve. */
+  border: 1px solid var(--c-steel);
+  border-radius: var(--radius);
+  position: relative; overflow: hidden;
+}
+.t-skeleton::after {
+  content: ""; position: absolute; inset: 0;
+  background: var(--c-gold);
+  transform: skewX(calc(-1 * var(--cut-angle))) translateX(-160%);
+  animation: t-sweep var(--m-slow) var(--m-ease) infinite;
+}
+@keyframes t-sweep { to { transform: skewX(calc(-1 * var(--cut-angle))) translateX(260%); } }
+@media (prefers-reduced-motion: reduce) {
+  /* Sem varredura: a barra parada já diz "ainda não chegou". */
+  .t-skeleton::after { animation: none; display: none; }
+}
+
+/* FALHA — o que falhou, de onde, e o que deixou de ser conhecido. */
+.t-fault {
+  border-left: 3px solid var(--c-negative);
+  padding-left: var(--s-4);
+  font-family: var(--f-body); font-size: var(--t-sm);
+}
+.t-fault__what { display: block; font-weight: 600; color: var(--c-negative); }
+.t-fault__where { display: block; font-family: var(--f-data); font-size: var(--t-xs); color: var(--c-steel-deep); margin-top: var(--s-1); }
+.t-fault__cost { display: block; margin-top: var(--s-2); color: var(--c-ink); }
+
+/* HORA DA LEITURA — sem ela, um valor velho é igual a um valor novo. */
+.t-stale {
+  font-family: var(--f-data); font-size: var(--t-xs);
+  color: var(--c-steel-deep); white-space: nowrap;
+}
+.t-stale::before { content: "lido "; }
+
+/* VAZIO — o que ainda não aconteceu, com a data em que acontece. */
+.t-empty {
+  border: 1px solid var(--c-steel);
+  clip-path: var(--cut-corner);
+  padding: var(--s-8) var(--s-6);
+  text-align: left;
+}
+.t-empty__title {
+  font-family: var(--f-display); font-weight: 800;
+  font-size: var(--t-lg); line-height: 1;
+  text-transform: uppercase; letter-spacing: -0.01em;
+  margin: 0 0 var(--s-3);
+}
+.t-empty__next { margin: 0; color: var(--c-steel-deep); font-size: var(--t-sm); max-width: 46ch; }
+
+/* ============================================================
+   A passagem entre os dois produtos
+   Regra única: a passagem carrega DADO, nunca AUTORIDADE. Nenhuma
+   sessão, credencial ou permissão atravessa o corte. Por isso todo
+   dado que chega de outro produto chega marcado — e a marca é parte
+   da primitiva, não um enfeite que alguém pode esquecer.
+   ============================================================ */
+
+/* O convite para atravessar. O corte dourado é a borda esquerda:
+   visualmente, o elemento está encostado na linha que separa os dois lados. */
+.t-cross {
+  display: block; position: relative;
+  background: var(--c-surface);
+  border: 1px solid var(--c-ink);
+  border-left: 8px solid var(--c-gold);
+  border-radius: var(--radius);
+  padding: var(--s-4) var(--s-6);
+  text-decoration: none; color: inherit;
+  box-shadow: var(--shadow-hard);
+  transition: transform var(--m-base) var(--m-ease), box-shadow var(--m-base) var(--m-ease);
+}
+.t-cross:hover, .t-cross:focus-visible { transform: translate(-2px, -2px); box-shadow: var(--shadow-hard-lifted); }
+.t-cross__to {
+  font-family: var(--f-data); font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: 0.16em;
+  color: var(--c-steel-deep); display: block; margin-bottom: var(--s-2);
+}
+.t-cross__what { font-family: var(--f-body); font-weight: 600; font-size: var(--t-md); display: block; }
+.t-cross__why { font-size: var(--t-sm); color: var(--c-steel-deep); margin: var(--s-2) 0 0; max-width: 52ch; }
+
+/* Procedência. Todo dado vindo de fora usa isto, e o texto diz o estado da
+   verificação — nunca a cor sozinha. Sem procedência, o dado não entra. */
+.t-origin {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2);
+  font-family: var(--f-data); font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid currentColor; border-radius: var(--radius);
+}
+.t-origin--unverified { color: var(--c-attention); }
+.t-origin--verified   { color: var(--c-positive); }
+.t-origin--rejected   { color: var(--c-negative); }
+.t-origin__from { font-weight: 700; letter-spacing: 0.16em; }
+/* O estado da verificação nunca é a parte discreta da linha: é o que a
+   pessoa precisa ler antes de decidir. Fica na cor do estado e em negrito. */
+.t-origin__flag { font-weight: 700; letter-spacing: 0.16em; margin-left: auto; }
+.t-origin__note { color: var(--c-steel-deep); letter-spacing: 0.04em; text-transform: none; }
+
+/* ============================================================
+   Contexto escuro
+   Sobre ink os cinzas do sistema não servem: steel-deep sobre ink dá
+   2,87:1. Marque o container com .t-dark e as primitivas se ajustam.
+   Esta é a única forma suportada de usar as primitivas em chrome escuro.
+   ============================================================ */
+.t-dark .t-network--main   { color: var(--c-paper-dim); border-color: var(--c-steel); }
+.t-dark .t-stale           { color: var(--c-steel-dim); }
+.t-dark .t-amount__unit    { color: var(--c-steel-dim); }
+.t-dark .t-field__label    { color: var(--c-steel-dim); }
+.t-dark .t-cross__to,
+.t-dark .t-cross__why      { color: var(--c-steel-dim); }
+.t-dark .t-origin__note    { color: var(--c-steel-dim); }
+.t-dark .t-empty__next     { color: var(--c-steel-dim); }
+.t-dark .t-fault__cost     { color: var(--c-paper-dim); }
+.t-dark .t-fault__where    { color: var(--c-steel-dim); }
+
+/* Foco visível em qualquer lugar. Não negociável.
+   O anel é ink sobre fundo claro (16,91:1) e gold sobre fundo escuro
+   (9,46:1). Na v1.0.0 era gold-deep, que sobre paper dá 2,71:1 e fica
+   abaixo do mínimo de 3:1 — indicador de foco é elemento não-textual
+   que carrega informação, e 3:1 não é opinião. */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid var(--c-gold-deep);
+  outline: 3px solid var(--c-ink);
   outline-offset: 2px;
+}
+.t-dark :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline-color: var(--c-gold);
 }

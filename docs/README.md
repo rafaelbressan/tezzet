@@ -55,6 +55,7 @@ Uma SPEC define o comportamento; este é o código que a cumpre, com os portões
 | Diretório | O que é |
 |---|---|
 | [`../suite/`](../suite/) | Marca, narrativa, vocabulário e tokens de design dos dois produtos. Fonte única em `suite/tokens/tokens.json` |
+| [`../suite/JOURNEY.md`](../suite/JOURNEY.md) | **A jornada entre Tezzet e TAPS**: a tese, as duas passagens, a identidade compartilhada, o que a navegação deliberadamente não compartilha, e a primeira execução de cada produto com o texto real das telas |
 
 `suite/` fica na raiz de propósito: ele é consumido como pacote (`@tezosrio/suite/tokens/tokens.css`), não lido como documentação.
 

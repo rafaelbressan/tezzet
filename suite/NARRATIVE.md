@@ -58,7 +58,7 @@ Isso é curto o suficiente para caber num cabeçalho e específico o suficiente 
 
 **Erros não pedem desculpa e nunca são vagos.** Errado: "Ops! Algo deu errado." Certo: "Saldo insuficiente. São necessários 1.204,3 XTZ e há 1.190,0 XTZ na carteira."
 
-**Tela vazia é convite, não lamento.** "Nenhum pagamento ainda. O primeiro sai na virada do ciclo 812."
+**Tela vazia é convite, não lamento.** "Nenhum pagamento ainda. O ciclo 1336 fechou; a distribuição dele roda quando o 1338 começar."
 
 **Nunca esconda risco atrás de tom simpático.** Mostrar mnemônica, aprovar payout e trocar para mainnet são momentos em que a interface deve ficar mais seca, não mais amigável.
 
@@ -71,7 +71,8 @@ Uma palavra por conceito, nos dois produtos:
 | carteira | wallet, conta |
 | endereço | address, chave pública |
 | frase de recuperação | seed, mnemônica, seed phrase |
-| senha | passphrase, PIN |
+| senha da carteira | passphrase, senha mestra |
+| PIN de transação | senha de transação, código |
 | ciclo | cycle |
 | delegador | delegante, delegate |
 | baker | validador, padeiro |
@@ -80,23 +81,34 @@ Uma palavra por conceito, nos dois produtos:
 | taxa da rede | fee, taxa de transação |
 | comissão do baker | fee do baker, taxa de serviço |
 | operação | transação, tx |
-| rede de teste | testnet, ghostnet (como termo genérico) |
+| rede de teste | testnet, shadownet/bakingnet (como termo genérico) |
+| carteira de pagamento | hot wallet, carteira quente |
+| assinador remoto | signer, servidor de assinatura |
+| extrato do ciclo | relatório, recibo, demonstrativo |
+| passagem | ponte, integração, deep link |
+| desligado · simula · paga | off, simulation, on (na interface) |
 
-`Ghostnet` e `mainnet` continuam sendo nomes próprios de redes específicas — só não servem como palavra genérica para "rede de teste".
+`Shadownet`, `Bakingnet` e `mainnet` são nomes próprios de redes específicas — servem quando você fala **daquela** rede, e não como palavra genérica para "rede de teste". **Ghostnet foi desligada** (ADR-0001 §11.2): não aparece mais em texto nenhum da suíte. As redes de teste hoje são **Shadownet** para o Tezzet e **Bakingnet** para o TAPS.
+
+**Senha da carteira e PIN de transação são coisas diferentes, e chamar as duas de "senha" é perigoso.** A senha da carteira protege o cofre guardado e é a raiz da recuperação. O PIN de transação não protege nada em repouso — ele não deriva chave e não cifra nada; é o portão que separa **abrir** a carteira de **gastar** o que está nela, e quem segura a contagem de tentativas é o sistema operacional (SPEC-0001 §8.4). Uma pessoa que acredita que o PIN de seis dígitos protege o cofre está errada sobre a própria segurança, e foi a interface que ensinou isso a ela.
 
 ## Regras que não se negociam
 
-1. **Dourado nunca é texto sobre fundo claro.** `#C8B08B` sobre `#EDEDED` dá 1,72:1. É preenchimento, régua ou corte — nunca letra. Sobre preto (9,39:1) pode tudo.
+1. **Dourado nunca é texto sobre fundo claro.** `#C8B08B` sobre `#EDEDED` dá 1,79:1. É preenchimento, régua ou corte — nunca letra. Sobre preto (9,46:1) pode tudo. Todas as razões da suíte são recalculadas por `tokens/contrast.mjs`, que reprova se `tokens.json` divergir do cálculo.
 2. **Zero cantos arredondados.** Herdado do `button_selector.xml` original, que já usava `android:radius="0dp"`.
 3. **Um ângulo só.** 21°. Um segundo ângulo destrói a assinatura.
 4. **Todo dado da cadeia é monoespaçado e tabular.** Endereço, hash, valor, ciclo, bloco. Sem exceção — é o que permite conferir dois valores um sobre o outro.
 5. **Valor em XTZ tem seis casas decimais.** A unidade da rede é o mutez. Arredondar para duas casas é perder dinheiro.
 6. **Cor nunca carrega significado sozinha.** Todo status tem texto. Daltonismo e impressão em preto e branco continuam funcionando.
 7. **Movimento orienta, não enfeita.** O corte se abre uma vez, no carregamento. O resto é transição de estado. Tudo respeita `prefers-reduced-motion`.
+8. **A passagem entre produtos carrega dado, nunca autoridade.** Nenhuma sessão, credencial ou permissão atravessa o corte, e todo dado que vem de outro produto chega marcado com a procedência. Ver [`JOURNEY.md`](JOURNEY.md).
+9. **Nenhum número na tela é um número que ninguém leu.** Dado de cadeia tem quatro estados — carregando, falha, velho e vazio — e nenhum deles é um zero.
 
 ## Como isto vira código
 
+- `JOURNEY.md` — a jornada entre os dois produtos: a tese, as duas passagens, a identidade compartilhada e a primeira execução de cada um, com o texto real das telas.
 - `tokens/tokens.json` — fonte única, neutra de plataforma. Web, React Native e Compose geram a partir dele.
+- `tokens/contrast.mjs` — recalcula as razões de contraste e reprova se o JSON divergir.
 - `tokens/tokens.css` — variáveis CSS e as primitivas compartilhadas.
 - `index.html` — a referência viva. Abra num navegador para ver tudo aplicado.
 
