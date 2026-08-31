@@ -754,9 +754,17 @@ body {
         <p class="head__sub">
           Um pagamento de delegação é um evento com dois registros. O delegador vê um valor entrar.
           O baker sabe de que ciclo ele veio, qual foi a comissão e o que ficou retido abaixo do mínimo.
-          Hoje cada lado vê a própria metade e adivinha a outra. A jornada existe para fechar essa lacuna —
-          <strong>cada lado passa a poder ler a metade do outro, do mesmo evento</strong> — e não para levar
-          quem usa um produto a instalar o outro. Documento completo em <code>JOURNEY.md</code>.
+          Hoje cada lado vê a própria metade e adivinha a outra. A jornada existe para fechar essa lacuna:
+          <strong>cada lado passa a poder ler a metade do outro, do mesmo evento</strong>. Os dois produtos
+          continuam podendo ser usados separados — como Jira e Confluence. Documento completo em
+          <code>JOURNEY.md</code>.
+        </p>
+        <p class="head__sub" style="margin-top:var(--s-4)">
+          <strong>Isto não bloqueia nada.</strong> A entrega da suíte são dois produtos funcionando — uma
+          carteira e um distribuidor. A narrativa de juntá-los vem depois deles. Decisão de Rafael em
+          30/08/2026: a BRES-43 saiu do estágio 3 e foi para o estágio 7, depois de todo o trabalho de
+          produto. Só uma coisa aqui precisa ser decidida cedo, e é de modelo de dados, não de narrativa
+          (<code>JOURNEY.md</code> §12.1).
         </p>
       </div>
 
@@ -773,10 +781,10 @@ body {
             ser provada, assina-se o dado, não se autentica a pessoa.
           </p>
           <p class="creed__note">
-            O teste que aprova ou reprova qualquer passagem: <strong>ela responde “isso está certo?”</strong>
-            Se responde “e se você também usasse…”, não entra. Uma passagem que só faz sentido do ponto de
-            vista de quem vende não entra — e as recusadas ficam escritas, com o motivo, para que uma
-            reversão tenha que dar o dela.
+            <strong>Passagem de dado e sugestão de produto são coisas diferentes.</strong> A passagem de dado
+            responde “isso está certo?”. A sugestão — dizer que o outro produto existe — segue outra regra:
+            <strong>só aparece para quem é candidato</strong>, e na Tezos dá para saber quem é candidato lendo
+            a cadeia. Um baker vê o TAPS; um delegador comum nunca vê.
           </p>
           </div>
         </div>
@@ -973,6 +981,8 @@ body {
             <p class="demo__rule">
               O botão discreto existe de propósito: quem guarda XTZ noutra carteira precisa da mesma
               informação sem o Tezzet no meio. <strong>A passagem nunca é o único caminho.</strong>
+              E é aqui — e só aqui — que sugerir o Tezzet dentro do TAPS faz sentido: é o instante em que
+              o baker <em>precisa</em> de uma carteira, para uma tarefa concreta que está na tela.
             </p>
           </div>
         </div>
@@ -1021,34 +1031,36 @@ body {
       <!-- ---- RECUSADAS ---- -->
       <div class="grid grid--2 grid--top rise" style="margin-top:var(--s-16)">
         <div>
-          <h3 class="head__title" style="font-size:var(--t-xl)">Passagens recusadas</h3>
+          <h3 class="head__title" style="font-size:var(--t-xl)">O que foi recusado —<br>e de quem é cada decisão</h3>
           <p class="head__sub" style="margin-bottom:var(--s-6)">
-            Duas passagens, não seis. Uma jornada com muitas passagens é um funil com outro nome.
-            Escritas aqui para que uma reversão tenha que dar o motivo.
+            A primeira versão desta lista misturava três tipos de decisão numa tabela só, e por isso não dava
+            para discutir nenhuma. Separadas por dono, cada uma vira revisável por quem manda nela.
           </p>
-          <div class="nope">
-            <p class="nope__what">Descobrir bakers dentro do Tezzet</p>
-            <p class="nope__why">Uma carteira que recomenda para quem delegar tem conflito de interesse com quem a usa. É publicidade com aparência de recurso.</p>
+
+          <p class="demo__label" style="margin-bottom:var(--s-3)">Reativado por decisão de produto · 30/08/2026</p>
+          <div class="nope" style="border-left-color:var(--c-positive)">
+            <p class="nope__what">“Instale o TAPS” para quem é baker</p>
+            <p class="nope__why">Entra. Foi recusada por uma regra minha que proibia upsell inteiro — errada. Um baker usando a carteira é candidato real. A qualificação é o campo de <em>delegate</em> na cadeia; o delegador comum continua sem ver nada.</p>
           </div>
-          <div class="nope">
-            <p class="nope__what">“Instale o TAPS” para quem tem endereço de baker</p>
-            <p class="nope__why">Responde “e se você também usasse”. Reprova no teste.</p>
-          </div>
+
+          <p class="demo__label" style="margin:var(--s-6) 0 var(--s-3)">Não é desenho · já fechado em SPEC-0001</p>
           <div class="nope">
             <p class="nope__what">Login único da suíte</p>
-            <p class="nope__why">A passagem carrega dado, nunca autoridade. E o Tezzet não tem servidor onde uma conta pudesse existir.</p>
+            <p class="nope__why">A sessão do operador do TAPS não pode ser o que assina dinheiro. E o Tezzet não tem servidor onde uma conta pudesse existir.</p>
           </div>
           <div class="nope">
             <p class="nope__what">Aprovar payout do TAPS pelo Tezzet</p>
-            <p class="nope__why">Faria a carteira do baker virar custódia de payout. Quem aprova payout é o companion do TAPS, que é outro produto da mesma suíte.</p>
+            <p class="nope__why">Faria a carteira do baker virar custódia de payout. Quem aprova payout é o companion do TAPS.</p>
           </div>
           <div class="nope">
             <p class="nope__what">Carteira embutida dentro do TAPS</p>
-            <p class="nope__why">Um console de operação com fundos dentro é o modelo de maior risco possível — e é o defeito que a reconstrução existe para apagar.</p>
+            <p class="nope__why">Console de operação com fundos dentro é o modelo de maior risco possível. <strong>Sugerir e abrir o Tezzet a partir do TAPS é outra coisa, e está liberado</strong> — é a Passagem B. Sugerir não é embutir.</p>
           </div>
-          <div class="nope" style="margin-bottom:0">
+
+          <p class="demo__label" style="margin:var(--s-6) 0 var(--s-3)">Preferência de desenho · reversível</p>
+          <div class="nope" style="margin-bottom:0; border-left-color:var(--c-steel)">
             <p class="nope__what">Painel único com os dois produtos</p>
-            <p class="nope__why">Simetria forçada. Públicos, riscos e frequências de uso são diferentes.</p>
+            <p class="nope__why">Simetria forçada: públicos, riscos e frequências de uso são diferentes. Preferência fraca — cai se produto quiser.</p>
           </div>
         </div>
 

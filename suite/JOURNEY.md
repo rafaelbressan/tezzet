@@ -7,6 +7,21 @@
 
 ---
 
+## 0. O que este documento é — e o que ele não é
+
+**Não é pré-requisito de nada.** A entrega da suíte são **dois produtos funcionando**: uma carteira
+e um distribuidor. A narrativa de juntá-los vem depois deles, não antes.
+
+Decisão de Rafael em 2026-08-30: a BRES-43 saiu do estágio 3 e foi para o **estágio 7**, depois de
+todo o trabalho de produto. Nada aqui bloqueia Tezzet ou TAPS, e nenhum critério de aceite de issue
+de produto depende desta página.
+
+O que este documento é: **intenção de desenho registrada cedo**, para que as decisões de produto
+não fechem portas de mão única sem perceber. Só existe **uma** coisa aqui nessa categoria, e ela
+está na seção 12.
+
+---
+
 ## 1. A tese
 
 Um pagamento de delegação é **um evento com dois registros**. O delegador vê um valor entrar na
@@ -14,16 +29,43 @@ carteira. O baker sabe de que ciclo ele veio, qual foi a recompensa bruta, quant
 o que ficou retido abaixo do mínimo e o que sobrou acumulado para o ciclo seguinte. Hoje cada lado
 vê a própria metade e adivinha a outra: o delegador não sabe por que recebeu aquele valor, e o
 baker descobre que o pagamento falhou quando alguém reclama. A jornada entre Tezzet e TAPS existe
-para fechar essa lacuna — **cada lado passa a poder ler a metade do outro, do mesmo evento** —
-e não para levar quem usa um produto a instalar o outro.
+para fechar essa lacuna: **cada lado passa a poder ler a metade do outro, do mesmo evento.**
 
-Isso dá um teste, e ele é o critério de aceite de qualquer passagem futura:
+Isso dá um teste, e ele é o critério de aceite de qualquer passagem de dado futura:
 
-> **Toda passagem responde "isso está certo?".**
-> Nenhuma responde "e se você também usasse…".
+> **Toda passagem de dado responde "isso está certo?".**
 
-Uma passagem que só faz sentido do ponto de vista de quem vende não entra. A seção 6 lista as que
-foram recusadas por esse teste, com o motivo de cada uma, para que ninguém precise redescobrir.
+A seção 6 lista as que foram recusadas por esse teste, com o motivo de cada uma, para que ninguém
+precise redescobrir.
+
+### 1.1 Passagem de dado e sugestão de produto são coisas diferentes
+
+Correção registrada em 2026-08-30, depois de a primeira versão deste documento errar aqui: a v1
+tratou os dois mecanismos como um só e **proibiu upsell inteiro**. Isso estava errado.
+
+| | **Passagem de dado** | **Sugestão de produto** |
+|---|---|---|
+| O que faz | Informação de um produto aparece dentro do outro | Diz que o outro produto existe |
+| Regra | Responde *"isso está certo?"* | Só aparece para quem é **candidato** |
+| Governa | Desenho (esta página) | Produto (Rafael) |
+
+A regra da sugestão **não** é "nunca sugira". É **"só sugira para quem é candidato"** — e os dois
+produtos podem ser usados separados, como Jira e Confluence. Ninguém é obrigado a usar os dois.
+
+**A relação entre eles é assimétrica, e é isso que decide onde a sugestão aparece:**
+
+- **Todo usuário de TAPS é candidato ao Tezzet.** Um baker sempre precisa de uma carteira — nem que
+  seja para reforçar a carteira de pagamento (seção 5). Vale para praticamente 100% deles.
+- **Quase nenhum usuário do Tezzet é candidato ao TAPS.** Um delegador comum não opera baker. Para
+  ele, TAPS na tela é ruído — e não deve aparecer.
+
+**Como se separa um do outro sem adivinhar:** na Tezos, "este endereço é um baker?" é um campo
+público — o endereço está registrado como *delegate* ou não está. O Tezzet já lê a cadeia para
+mostrar saldo e delegação. Quem é baker vê a sugestão do TAPS; quem não é nunca vê, e nem sabe que
+ela existe. A qualificação é **fato verificável**, não segmento de marketing.
+
+Um delegador comum ainda ganha alguma coisa quando o baker dele roda TAPS — mais dado sobre a
+própria delegação, que é a seção 4. Isso é valor entregue, não anúncio.
 
 ---
 
@@ -31,7 +73,8 @@ foram recusadas por esse teste, com o motivo de cada uma, para que ninguém prec
 
 > **A passagem carrega dado. Nunca autoridade.**
 
-Nenhuma sessão, credencial, permissão ou chave atravessa o corte. O que atravessa é informação, e
+Isto vale para a passagem de dado **e** para a sugestão de produto: nem uma nem outra pode fazer
+uma sessão atravessar. Nenhuma sessão, credencial, permissão ou chave atravessa o corte. O que atravessa é informação, e
 ela chega **marcada com a procedência**: de onde veio e se foi verificada.
 
 Isto não é preferência de desenho. É o limite duro herdado do veto do Tezos Core & Crypto e
@@ -234,6 +277,18 @@ quando o ciclo 1338 começar — 02/09, 04:06.
 O botão secundário existe de propósito: quem guarda XTZ noutra carteira precisa da mesma informação
 sem o Tezzet no meio. **A passagem nunca é o único caminho.**
 
+### 5.1 Este é o momento certo de sugerir o Tezzet
+
+É aqui, e só aqui, que a sugestão da carteira faz sentido dentro do TAPS — porque é o instante em
+que o baker **precisa** de uma carteira, para uma tarefa concreta que está na tela:
+
+- **Usa Tezzet** → o pedido abre já preenchido.
+- **Não usa** → mostra endereço e valor para copiar, e é aqui que cabe dizer que o Tezzet existe.
+
+Sugestão na hora da necessidade, não faixa publicitária no topo do console. E ela continua sendo
+sugestão: **sugerir e abrir o Tezzet a partir do TAPS é liberado; embutir uma carteira dentro do
+TAPS não é** (seção 6). Sugerir não é embutir.
+
 **Do outro lado, no Tezzet**, o pedido chega como o que ele é — entrada de fora:
 
 ```
@@ -268,23 +323,41 @@ tem 35 caracteres; um endereço Tezos tem 36. Nada foi preenchido.
 
 ---
 
-## 6. As passagens recusadas
+## 6. O que foi recusado, e de quem é cada decisão
 
-Escritas aqui para que ninguém precise refazer o raciocínio, e para que uma reversão tenha que dar
-o motivo.
+A v1 desta seção era uma tabela só com seis linhas, e ela estava ilegível por um motivo estrutural:
+**misturava três tipos de decisão diferentes** — o que é de produto, o que já foi fechado por
+segurança, e o que é preferência de desenho. Separado, cada linha vira discutível por quem é dono
+dela.
 
-| Passagem | Por que foi recusada |
+### 6.1 Reativado por decisão de produto — 2026-08-30
+
+| Ideia | O que mudou |
 |---|---|
-| **Descobrir bakers dentro do Tezzet** | Uma carteira que recomenda para quem delegar tem conflito de interesse com quem a usa. É publicidade com aparência de recurso. |
-| **"Instale o TAPS" para quem tem endereço de baker** | Responde "e se você também usasse". Falha o teste da seção 1. |
-| **Login único da suíte** | Proibido pela seção 2. E o Tezzet não tem servidor onde uma conta pudesse existir. |
-| **Aprovar payout do TAPS pelo Tezzet** | Faria a carteira do baker virar custódia de payout, desfazendo a decisão de SPEC-0001 §11. Quem aprova payout é o companion do TAPS (BRES-49), que é outro produto da mesma suíte. |
-| **Carteira embutida dentro do TAPS** | Um console de operação com fundos dentro é o modelo de maior risco possível — e é literalmente o defeito que a reconstrução existe para apagar. |
-| **Painel único com os dois produtos** | Simetria forçada. Os públicos, os riscos e as frequências de uso são diferentes; ver a seção 7. |
+| **"Instale o TAPS" para quem é baker** | **Entra.** Foi recusada na v1 por uma regra minha que proibia upsell inteiro. Rafael reverteu, e ele está certo: um baker usando a carteira é candidato real ao TAPS. A qualificação é o campo de *delegate* na cadeia (seção 1.1) — o delegador comum continua sem ver nada. |
 
-Duas passagens, não seis. Uma jornada com muitas passagens é um funil com outro nome.
+### 6.2 Não é decisão de desenho — já fechada em SPEC-0001
 
----
+Estas não estão aqui por preferência. Vêm do veto do Tezos Core & Crypto e não se reabrem nesta
+página.
+
+| Ideia | Por quê |
+|---|---|
+| **Login único da suíte** | A sessão do operador do TAPS não pode ser o que assina dinheiro (§8.5). E o Tezzet não tem servidor onde uma conta pudesse existir. |
+| **Aprovar payout do TAPS pelo Tezzet** | Faria a carteira do baker virar custódia de payout, desfazendo a decisão de §11. Quem aprova payout é o companion do TAPS (BRES-49). |
+| **Carteira embutida dentro do TAPS** | Console de operação com fundos dentro é o modelo de maior risco possível — o defeito que a reconstrução existe para apagar. **Sugerir e abrir o Tezzet a partir do TAPS é outra coisa, e está liberado** (seção 5.1). |
+
+### 6.3 Preferência de desenho — reversível, e fraca
+
+| Ideia | Por quê | Força |
+|---|---|---|
+| **Painel único com os dois produtos** | Simetria forçada: públicos, riscos e frequências de uso são diferentes (seção 7). | Fraca. Cai se produto quiser. |
+
+### 6.4 Parado por falta de um fato
+
+| Ideia | O que falta |
+|---|---|
+| **Descobrir bakers dentro do Tezzet** | Depende de a Tezos.Rio operar ou não um baker próprio. Se operar, a carteira recomendando para quem delegar é conflito de interesse direto. Se não, é feature comum de carteira e não há o que recusar. **Rafael deixou para depois em 2026-08-30** — não decidir agora não bloqueia nada. |
 
 ## 7. Navegação — o que é comum e o que deliberadamente não é
 
@@ -501,13 +574,36 @@ Nenhuma tela deste documento pressupõe código que ninguém vai escrever. O que
 | Leitor de pedido de transferência com procedência explícita, no Tezzet | B | BRES-70 |
 | Cerimônia de entrada como implementação única, consumida pelos dois | seções 3 e 7 | BRES-71 |
 
+As três são **pós-produto** e estão em backlog. Nenhuma bloqueia Tezzet ou TAPS.
+
+### 12.1 A única porta de mão única — nota para a BRES-46
+
+Tudo nesta página é aditivo e pode ser construído depois, com **uma exceção**. Ela não é de
+narrativa, é de modelo de dados, e por isso é a única coisa daqui que precisa ser decidida enquanto
+o motor de payout está sendo escrito:
+
+> **Gravar a decomposição por delegador no momento da distribuição, em vez de recalcular depois.**
+
+O motivo: o mínimo de pagamento é **a taxa estimada na hora da distribuição**, e a taxa da rede
+flutua (`docs/tezos-network-facts.md` §3.6). Ela não é reproduzível depois. Se o TAPS gravar só
+"paguei X para fulano", nunca mais dá para dizer com verdade **por que** fulano recebeu aquele
+valor num ciclo passado — o extrato de um ciclo antigo passa a ser impossível, não só ausente.
+
+O custo hoje é meia dúzia de colunas. Depois é histórico que não existe.
+
+E é quase de graça, porque quase tudo já está pedido em outro lugar: a **RN-22** já exige trilha de
+auditoria por delegador e por ciclo (guarda valor, data, resultado e hash — falta o bruto, a
+comissão, o retido e o mínimo aplicado), e o **§3.6** já manda persistir o saldo acumulado entre
+ciclos. É "não esquece disso", não trabalho novo.
+
 ---
 
 ## 13. Como isto se faz cumprir em revisão
 
 Perguntas que reprovam um PR de interface da suíte:
 
-- A passagem responde "isso está certo?" ou responde "e se você também usasse…"?
+- A **passagem de dado** responde "isso está certo?"
+- A **sugestão de produto** aparece só para quem é candidato, e a qualificação é lida da cadeia?
 - Algum dado que veio de outro produto aparece sem `.t-origin`?
 - Alguma tela deixa entender que a sessão de um produto autoriza uma assinatura no outro?
 - Algum número na tela pode ser um zero que ninguém leu?
