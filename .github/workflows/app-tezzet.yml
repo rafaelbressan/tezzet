@@ -1,0 +1,86 @@
+# Portão do app do Tezzet (BRES-45) — a onda de leitura e Beacon.
+#
+# Nenhum passo aqui pode ganhar `continue-on-error`: um portão que não reprova
+# é decoração, e a suíte já tem um caso desses no CI herdado do TAPS.
+#
+# O teste de contrato (`npm run test:contract`) NÃO roda aqui de propósito: ele
+# fala com a TzKT de verdade, e uma indisponibilidade dela reprovaria um PR que
+# não tem defeito nenhum. Ele roda na rotina diária e antes de release.
+
+name: app-tezzet
+
+on:
+  push:
+    branches: [master]
+    paths: ['apps/tezzet/**', 'suite/**', '.github/workflows/app-tezzet.yml']
+  pull_request:
+    paths: ['apps/tezzet/**', 'suite/**', '.github/workflows/app-tezzet.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: app-tezzet-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/tezzet
+
+jobs:
+  frontend:
+    name: portão de desenho, tipos, testes e bundle
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      # Busca @tezos-suite/chain pelo commit fixado em chain.pin.json. É o
+      # mesmo código que o TAPS usa; não há uma segunda cópia da aritmética.
+      - run: npm run chain:fetch
+      - run: npm run check:design
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx vite build
+
+  linux:
+    name: build Linux
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: dependências do WebKitGTK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: npm ci
+      - run: npm run chain:fetch
+      - run: npx tauri build --no-bundle
+
+  android:
+    name: build Android (APK)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: NDK
+        run: sdkmanager --install "ndk;27.1.12297006"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - run: npm ci
+      - run: npm run chain:fetch
+      - run: npx tauri android init
+      - run: npx tauri android build --apk
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.1.12297006

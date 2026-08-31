@@ -1,0 +1,240 @@
+/* Tokens da suíte. Fonte única: suite/tokens/tokens.json — nenhum valor
+   visual é escrito neste app. Cor, espaço, tipo, sombra e o corte de 21°
+   vêm todos de lá. */
+@import '../../../../suite/tokens/tokens.css';
+
+* { box-sizing: border-box; }
+
+html, body, #raiz { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--c-ink);
+  color: var(--c-paper-dim);
+  font-family: var(--f-body);
+  font-size: var(--t-base);
+  line-height: 1.5;
+}
+
+/* O chrome do app é escuro; as primitivas .t-* se ajustam com .t-dark. */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: var(--s-4);
+  gap: var(--s-6);
+}
+
+.app__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-4);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--c-steel);
+}
+
+.wordmark {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: var(--t-xl);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-gold);
+  margin: 0;
+}
+
+.wordmark__role {
+  font-family: var(--f-body);
+  font-size: var(--t-xs);
+  letter-spacing: 0.16em;
+  color: var(--c-steel-dim);
+  margin-left: var(--s-2);
+}
+
+.app__spacer { margin-left: auto; }
+
+.app__main { flex: 1; }
+
+.app__footer {
+  border-top: 1px solid var(--c-rule-dark);
+  padding-top: var(--s-4);
+  font-size: var(--t-xs);
+  color: var(--c-steel-faint);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+}
+.app__footer a { color: var(--c-steel-dim); }
+
+/* --- navegação ------------------------------------------------------ */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  border-bottom: 1px solid var(--c-rule-dark);
+  margin-bottom: var(--s-6);
+}
+.tabs__item {
+  font-family: var(--f-body);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--s-3) var(--s-4);
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: var(--radius);
+  color: var(--c-steel-dim);
+  cursor: pointer;
+}
+.tabs__item[aria-selected='true'] {
+  color: var(--c-paper);
+  border-bottom-color: var(--c-gold);
+}
+
+/* --- painéis --------------------------------------------------------- */
+.panel {
+  background: var(--c-ink-soft);
+  border: 1px solid var(--c-rule-dark);
+  border-radius: var(--radius);
+  clip-path: var(--cut-corner);
+  padding: var(--s-6);
+}
+.panel + .panel { margin-top: var(--s-4); }
+
+.panel__title {
+  font-family: var(--f-display);
+  font-size: var(--t-md);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-paper);
+  margin: 0 0 var(--s-4);
+}
+
+.stack { display: flex; flex-direction: column; gap: var(--s-4); }
+.row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-3); }
+.row--between { justify-content: space-between; }
+
+.note { font-size: var(--t-sm); color: var(--c-steel-dim); max-width: var(--measure); }
+.note--strong { color: var(--c-paper-dim); }
+
+/* --- saldo ----------------------------------------------------------- */
+.balance__total {
+  font-family: var(--f-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-2xl);
+  color: var(--c-paper);
+}
+.balance__split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-4);
+  margin-top: var(--s-4);
+}
+.balance__cell {
+  border-left: 3px solid var(--c-gold);
+  padding-left: var(--s-4);
+}
+.balance__label {
+  display: block;
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c-steel-dim);
+  margin-bottom: var(--s-1);
+}
+.balance__value { font-size: var(--t-md); color: var(--c-paper); }
+
+/* --- histórico ------------------------------------------------------- */
+.history { width: 100%; border-collapse: collapse; }
+.history th {
+  text-align: left;
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c-steel-dim);
+  font-weight: 600;
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  border-bottom: 1px solid var(--c-steel);
+}
+.history td {
+  padding: var(--s-3) var(--s-3) var(--s-3) 0;
+  border-bottom: 1px solid var(--c-rule-dark);
+  font-size: var(--t-sm);
+  vertical-align: top;
+}
+.history__amount { text-align: right; white-space: nowrap; }
+.history a { color: var(--c-gold); }
+
+/* --- receber --------------------------------------------------------- */
+.receive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+  align-items: flex-start;
+}
+.receive__qr {
+  background: var(--c-surface);
+  padding: var(--s-4);
+  border: 1px solid var(--c-ink);
+  border-radius: var(--radius);
+  line-height: 0;
+}
+.receive__qr img { width: 220px; height: 220px; image-rendering: pixelated; }
+.receive__side { flex: 1; min-width: 260px; }
+
+.countdown {
+  font-family: var(--f-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-gold);
+}
+
+/* --- formulário ------------------------------------------------------ */
+.form { max-width: 46ch; }
+.form .t-field + .t-field { margin-top: var(--s-4); }
+.form .t-field__input {
+  color: var(--c-paper);
+  border-bottom-color: var(--c-steel-dim);
+}
+.form__actions { display: flex; gap: var(--s-3); margin-top: var(--s-6); flex-wrap: wrap; }
+
+.receipt {
+  border-left: 3px solid var(--c-positive);
+  padding-left: var(--s-4);
+}
+.receipt__line { display: flex; justify-content: space-between; gap: var(--s-4); font-size: var(--t-sm); }
+
+/* Botão claro sobre chrome escuro: o .t-button do sistema é ink sobre claro. */
+.t-dark .t-button { background: var(--c-paper); color: var(--c-ink); border-color: var(--c-paper); }
+.t-dark .t-button:hover, .t-dark .t-button:focus-visible { color: var(--c-ink); }
+.t-dark .t-button--quiet { background: transparent; color: var(--c-paper-dim); border-color: var(--c-steel); }
+.t-dark .t-button[disabled] { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+
+/* `appearance: none` não é enfeite: o select nativo do WebKitGTK ignora
+   background e desenha o próprio, e o resultado é texto claro sobre fundo
+   branco — 1,3:1, ilegível. Conferido em tela no Linux. */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--f-body);
+  font-size: var(--t-sm);
+  padding: var(--s-2) var(--s-6) var(--s-2) var(--s-3);
+  background: var(--c-ink-soft);
+  color: var(--c-paper);
+  border: 1px solid var(--c-steel);
+  border-radius: var(--radius);
+}
+/* A lista aberta é desenhada pelo sistema; sem isto ela herda o branco. */
+.select option { background: var(--c-ink-soft); color: var(--c-paper); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

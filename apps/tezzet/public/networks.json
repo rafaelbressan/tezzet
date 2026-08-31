@@ -1,0 +1,25 @@
+{
+  "configVersion": 1,
+  "_comment": "Redes são configuração, nunca código (SPEC-0002 §5). Este arquivo é lido em execução: trocar um endpoint não pede recompilação. Nenhuma constante de protocolo entra aqui — blocks_per_cycle é 14400 em mainnet e Shadownet e 3600 em Bakingnet, e se lê da cadeia.",
+  "defaultNetworkId": "shadownet",
+  "networks": [
+    {
+      "id": "shadownet",
+      "label": "Shadownet",
+      "kind": "test",
+      "beaconNetworkType": "shadownet",
+      "rpcUrl": "https://rpc.shadownet.teztnets.com",
+      "tzktApiUrl": "https://api.shadownet.tzkt.io",
+      "explorerUrl": "https://shadownet.tzkt.io"
+    },
+    {
+      "id": "mainnet",
+      "label": "Mainnet",
+      "kind": "main",
+      "beaconNetworkType": "mainnet",
+      "rpcUrl": "https://rpc.tzbeta.net",
+      "tzktApiUrl": "https://api.tzkt.io",
+      "explorerUrl": "https://tzkt.io"
+    }
+  ]
+}
