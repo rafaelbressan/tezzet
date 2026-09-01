@@ -1,0 +1,8 @@
+{
+  "$comment": "A camada de cadeia da suíte (SPEC-0002) mora em packages/tezos-chain no repositório do TAPS. O npm não instala subdiretório de repositório git, então ela é buscada por commit fixo e montada em vendor/ (fora do git). Trocar o commit é uma revisão do Tezos Chain & Payouts.",
+  "package": "@tezos-suite/chain",
+  "repository": "https://github.com/rafaelbressan/taps.git",
+  "commit": "d9f97e072cd68680850f8befc3b007b6cd2585fb",
+  "subdirectory": "packages/tezos-chain",
+  "spec": "SPEC-0002 — docs/spec/0002-camada-de-cadeia.md (repositório do TAPS)"
+}

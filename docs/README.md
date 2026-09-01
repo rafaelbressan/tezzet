@@ -48,6 +48,8 @@ Uma SPEC define o comportamento; este é o código que a cumpre, com os portões
 |---|---|
 | [`../core/`](../core/) | `tezos-core`: o núcleo criptográfico compartilhado por Tezzet e TAPS, em Rust. O [`README`](../core/README.md) diz **o que a API garante e o que ela não garante**, item por item |
 
+| [`../apps/tezzet/`](../apps/tezzet/) | O app do Tezzet (Tauri v2 + React). Primeira onda: **leitura e Beacon, sem custódia** — nenhuma chave passa pelo app, e um teste reprova se passar. O [`README`](../apps/tezzet/README.md) diz o que está verificado em cada alvo |
+
 `core/` fica na raiz pelo mesmo motivo de `suite/`: ele é consumido como dependência pelos dois produtos, não lido como documentação.
 
 ## Identidade compartilhada
