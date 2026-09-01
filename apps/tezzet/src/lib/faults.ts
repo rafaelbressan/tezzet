@@ -93,16 +93,27 @@ function descreverDesconhecido(error: unknown): { what: string; where: string } 
   }
   if (typeof error === 'object' && error !== null) {
     const bag = error as Record<string, unknown>;
-    const texto = ['message', 'description', 'title', 'error', 'reason']
-      .map((campo) => bag[campo])
-      .find((valor): valor is string => typeof valor === 'string' && valor.trim() !== '');
-    const tipo = ['name', 'type', 'errorType', 'code']
-      .map((campo) => bag[campo])
-      .find((valor): valor is string => typeof valor === 'string' && valor.trim() !== '');
+    const texto = campoDeTexto(bag, ['message', 'description', 'title', 'reason', 'error']);
+    // `errorType` antes de `type`, e não o contrário: o Beacon rejeita com
+    // `{ type: 'error', errorType: 'ABORTED_ERROR' }`, onde `type` diz apenas
+    // "é um erro" e `errorType` é o único dado útil da rejeição.
+    const tipo = campoDeTexto(bag, ['errorType', 'name', 'code', 'type']);
+
     if (texto) return { what: texto, where: tipo ?? 'erro sem tipo' };
-    return { what: serializar(error), where: tipo ?? 'erro sem tipo' };
+    // Sem mensagem: o tipo vira a frase, e a carga bruta vai para a linha de
+    // origem — em vez de o JSON inteiro virar o título do painel.
+    if (tipo) return { what: `O erro veio sem mensagem, do tipo ${tipo}.`, where: serializar(error) };
+    return { what: serializar(error), where: 'erro sem tipo' };
   }
   return { what: String(error), where: `erro do tipo ${typeof error}` };
+}
+
+function campoDeTexto(bag: Record<string, unknown>, campos: readonly string[]): string | undefined {
+  for (const campo of campos) {
+    const valor = bag[campo];
+    if (typeof valor === 'string' && valor.trim() !== '') return valor;
+  }
+  return undefined;
 }
 
 function serializar(value: unknown): string {

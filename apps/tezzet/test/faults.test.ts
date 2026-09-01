@@ -15,6 +15,19 @@ describe('describeFault', () => {
     expect(`${fault.what}${fault.where}${fault.cost}`).not.toContain('[object Object]');
   });
 
+  it('a rejeição do Beacon mostra o errorType, não o "type" genérico', () => {
+    // A carga real, capturada ao fechar o modal de pareamento: `type` diz
+    // apenas "é um erro"; `errorType` é o que a pessoa precisa ler.
+    const fault = describeFault(
+      { type: 'error', errorType: 'ABORTED_ERROR', id: 'abc' },
+      'A conexão com a carteira não foi feita.',
+    );
+
+    expect(fault.what).toContain('ABORTED_ERROR');
+    expect(fault.what).not.toContain('{');
+    expect(fault.where).toContain('ABORTED_ERROR');
+  });
+
   it('cai no nome do tipo quando o objeto não tem texto nenhum', () => {
     const fault = describeFault({ codigo: 7 }, 'Nada foi enviado.');
 

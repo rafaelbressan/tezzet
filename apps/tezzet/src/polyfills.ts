@@ -8,7 +8,7 @@ import { Buffer } from 'buffer';
  * tela diz nada — porque a exceção acontece fora do fluxo do clique.
  *
  * Os 76 testes não pegavam isso: jsdom roda sob Node, onde `Buffer` é global.
- * `test/polyfills.test.ts` roda com o global apagado, que é o navegador.
+ * `test/beacon-webview.test.ts` roda com o global apagado, que é o navegador.
  *
  * Este módulo é importado no topo de `wallet/beacon.ts` — antes do
  * `@taquito/beacon-wallet` — e não no `main.tsx`, para que a garantia viva ao
