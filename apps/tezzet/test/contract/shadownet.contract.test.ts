@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { b58Encode, PrefixV2 } from '@taquito/utils';
 import { TzKTHttp } from '@tezos-suite/chain';
 import { fetchAccount } from '../../src/chain/account';
 import { fetchHistoryPage } from '../../src/chain/history';
@@ -82,10 +84,14 @@ describe('Shadownet, de verdade', () => {
   }, 30_000);
 
   it('conta que nunca existiu volta como ausência, não como saldo zero', async () => {
-    const nunca = 'tz1Z6UdtPeERnMGj9tRZymjg2HH1voeuBUDg';
+    // Sorteado a cada execução, nunca escrito no arquivo. Um endereço fixo
+    // aqui só é "inexistente" até alguém mandar XTZ para ele — e numa rede de
+    // teste com torneira, isso acontece: o endereço que estava escrito neste
+    // teste recebeu 100 XTZ e o teste passou a reprovar para sempre.
+    const nunca = b58Encode(randomBytes(20), PrefixV2.Ed25519PublicKeyHash);
     const account = await fetchAccount(tzkt(shadownet), nunca);
 
-    expect(account.seenOnChain).toBe(false);
+    expect(account.seenOnChain, `${nunca} devia ser desconhecido da cadeia`).toBe(false);
   }, 30_000);
 });
 
