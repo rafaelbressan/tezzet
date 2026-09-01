@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { PrefixV2, b58Encode } from '@taquito/utils';
 import { TzKTHttp, requireObject, requireString } from '@tezos-suite/chain';
@@ -83,15 +84,15 @@ describe('Shadownet, de verdade', () => {
   }, 30_000);
 
   it('conta que nunca existiu volta como ausência, não como saldo zero', async () => {
-    // Endereço derivado de 20 bytes fixos: base58 e checksum válidos, e
-    // ninguém tem a chave dele. A versão anterior apontava para um endereço
-    // real da Shadownet que estava vazio no dia em que o teste foi escrito e
-    // recebeu 100 XTZ depois — um teste que dependia de a conta de outra
-    // pessoa continuar vazia.
-    const nunca = b58Encode(new Uint8Array(20).fill(0xbe), PrefixV2.Ed25519PublicKeyHash);
+    // Sorteado a cada execução, nunca escrito no arquivo. Base58 e checksum
+    // válidos, e ninguém tem a chave dele. Um endereço fixo aqui só é
+    // "inexistente" até alguém mandar XTZ para ele — e numa rede de teste com
+    // torneira, isso acontece: o endereço que estava escrito neste teste
+    // recebeu 100 XTZ e o teste passou a reprovar para sempre.
+    const nunca = b58Encode(randomBytes(20), PrefixV2.Ed25519PublicKeyHash);
     const account = await fetchAccount(tzkt(shadownet), nunca);
 
-    expect(account.seenOnChain).toBe(false);
+    expect(account.seenOnChain, `${nunca} devia ser desconhecido da cadeia`).toBe(false);
   }, 30_000);
 });
 

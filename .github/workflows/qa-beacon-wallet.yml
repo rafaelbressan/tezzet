@@ -1,0 +1,40 @@
+# Assinar e enviar de verdade, sem humano (BRES-85).
+#
+# NÃO entra no portão de PR, e é de propósito: esta jornada depende da torneira
+# da Shadownet, do nó e da TzKT. Uma indisponibilidade deles reprovaria um PR
+# sem defeito nenhum — o mesmo motivo pelo qual `npm run test:contract` também
+# fica fora (ver app-tezzet.yml).
+#
+# Rode à mão antes de release, ou depois de mexer no Beacon, no envio ou na
+# confirmação. Se a torneira estiver fora, este job reprova alto dizendo isso;
+# ele nunca pula em silêncio.
+
+name: qa-beacon-wallet
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: qa-beacon-wallet
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: tools/qa-beacon-wallet
+
+jobs:
+  jornada:
+    name: chave nova, torneira, pareamento, envio e confirmação
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm ci
+        working-directory: apps/tezzet
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm run test:e2e
