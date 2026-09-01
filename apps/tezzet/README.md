@@ -72,8 +72,27 @@ Todo valor visual vem de [`suite/tokens/`](../../suite/). O `app.css` importa
 |---|---|---|
 | Linux | `npm run tauri build` | verificado |
 | Android | `npm run tauri android init && npm run tauri android build --apk` | verificado (APK sem assinatura) |
-| Windows | `npm run tauri build` num host Windows | não verificado aqui — não há toolchain MSVC nesta máquina |
+| Windows | `npm run tauri build` num host Windows, ou o cruzado abaixo | verificado: compila, e o `.exe` abre a janela no Windows |
 | iOS / macOS | — | adiado: não há máquina Apple (CLAUDE.md) |
 
 `src-tauri/gen/` não entra no git: `tauri android init` o regenera a partir de
 `tauri.conf.json`.
+
+### Windows a partir do Linux
+
+Não precisa de máquina Windows para saber se compila. `cargo-xwin` busca o CRT
+e o SDK da Microsoft, e o LLVM entra no lugar das ferramentas da MSVC:
+
+```bash
+rustup target add x86_64-pc-windows-msvc
+cargo install cargo-xwin
+# clang-cl, lld-link, llvm-lib e llvm-rc precisam estar no PATH.
+# llvm-rc é obrigatório: sem ele o build script do tauri-winres aborta com
+# NotAttempted("llvm-rc") ao embutir o ícone e a versão no executável.
+npm run tauri build -- --runner cargo-xwin --target x86_64-pc-windows-msvc --no-bundle
+```
+
+Sai `src-tauri/target/x86_64-pc-windows-msvc/release/tezzet.exe`. O que isso
+prova é que o código compila e liga para Windows — **não** que a interface se
+comporta lá. Para isso o `.exe` tem que rodar num Windows de verdade, com o
+runtime do WebView2 instalado (o Tauri usa o WebView2, não o WebKitGTK).
