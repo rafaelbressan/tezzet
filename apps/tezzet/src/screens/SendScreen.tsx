@@ -53,8 +53,9 @@ export function SendScreen({ session, address }: { session: ChainSession; addres
       const plan = planTransfer({
         destination: destination.trim(),
         amountMutez,
-        // O que está em stake não paga transferência: a parte líquida é o teto.
-        spendableMutez: account.delegated,
+        // O teto é o gastável de verdade: o que está em stake, saindo de
+        // stake ou em bond está congelado e não paga transferência.
+        spendableMutez: account.spendable,
         estimate,
       });
       setStage({ kind: 'review', plan });
@@ -172,7 +173,7 @@ function describeSendFault(error: unknown) {
       cost: 'Nada foi enviado.',
     };
   }
-  return describeFault(error, 'O envio');
+  return describeFault(error, 'Nada foi enviado.');
 }
 
 function Receipt({ plan }: { plan: TransferPlan }) {
@@ -195,7 +196,7 @@ function Receipt({ plan }: { plan: TransferPlan }) {
         <Amount mutez={plan.totalMutez} />
       </p>
       <p className="receipt__line">
-        <span>Sobra no saldo líquido</span>
+        <span>Sobra no gastável</span>
         <Amount mutez={plan.remainingMutez} />
       </p>
       <p className="note">
@@ -275,7 +276,7 @@ function Sent({
         {outcome ? OUTCOME_TEXT[outcome.status] : 'Consultando a cadeia…'}
         {outcome?.level !== undefined && ` Nível ${outcome.level}, cabeça em ${outcome.headLevel}.`}
       </p>
-      {error !== null && <Fault {...describeFault(error, 'A confirmação')} />}
+      {error !== null && <Fault {...describeFault(error, 'A confirmação não foi lida. A operação já foi injetada — confira no explorador antes de reenviar.')} />}
     </div>
   );
 }

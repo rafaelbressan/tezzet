@@ -8,10 +8,13 @@ import { Address, Amount, EmptyState, Fault, ReadAt, Skeleton } from '../ui/prim
 /**
  * Saldo, dividido.
  *
- * Desde o Adaptive Issuance o que está em stake e o que está delegado são
- * coisas diferentes: uma não é gastável e conta com peso cheio para o baker,
- * a outra é gastável e conta com peso reduzido. Um número só esconde
- * exatamente a parte que decide o que a pessoa pode fazer agora.
+ * Desde o Adaptive Issuance o saldo cheio contém três coisas que não se
+ * gastam — o que está em stake, o que está saindo de stake e o que está em
+ * bond. Mostrar um número só esconde exatamente a parte que decide o que a
+ * pessoa pode fazer agora, e foi assim que a versão anterior deste app
+ * liberou gastar 4 000 XTZ que a cadeia não deixa mover.
+ *
+ * As quatro linhas somam o total, e a soma é conferida em `fetchAccount`.
  */
 export function BalanceScreen({ session, address }: { session: ChainSession; address: string }) {
   const { state, reload } = useAsync(
@@ -33,8 +36,8 @@ export function BalanceScreen({ session, address }: { session: ChainSession; add
           <Skeleton width="16ch" label="Saldo total" />
           <div className="balance__split">
             <div className="balance__cell">
-              <span className="balance__label">Delegável</span>
-              <Skeleton width="12ch" label="Saldo delegável" />
+              <span className="balance__label">Gastável</span>
+              <Skeleton width="12ch" label="Saldo gastável" />
             </div>
             <div className="balance__cell">
               <span className="balance__label">Em stake</span>
@@ -45,7 +48,7 @@ export function BalanceScreen({ session, address }: { session: ChainSession; add
       )}
 
       {state.kind === 'error' && (
-        <Fault {...describeFault(state.error, 'O saldo', state.attempts)} />
+        <Fault {...describeFault(state.error, 'O saldo não foi lido.', state.attempts)} />
       )}
 
       {state.kind === 'ready' && !state.value.seenOnChain && (
@@ -66,9 +69,9 @@ export function BalanceScreen({ session, address }: { session: ChainSession; add
 
           <div className="balance__split">
             <div className="balance__cell">
-              <span className="balance__label">Delegável (líquido)</span>
+              <span className="balance__label">Gastável agora</span>
               <span className="balance__value">
-                <Amount mutez={state.value.delegated} />
+                <Amount mutez={state.value.spendable} />
               </span>
             </div>
             <div className="balance__cell">
@@ -85,7 +88,23 @@ export function BalanceScreen({ session, address }: { session: ChainSession; add
                 </span>
               </div>
             )}
+            {state.value.bonds > 0n && (
+              <div className="balance__cell">
+                <span className="balance__label">Em bond de rollup</span>
+                <span className="balance__value">
+                  <Amount mutez={state.value.bonds} />
+                </span>
+              </div>
+            )}
           </div>
+
+          <p className="note">
+            Só o gastável paga uma transferência. O que está em stake
+            {state.value.unstaked > 0n ? ' e o que está saindo de stake' : ''} está congelado na
+            cadeia
+            {state.value.unstaked > 0n ? ' até a finalização' : ''}, e as parcelas acima somam o
+            total.
+          </p>
 
           <p className="note">
             {state.value.delegate ? (

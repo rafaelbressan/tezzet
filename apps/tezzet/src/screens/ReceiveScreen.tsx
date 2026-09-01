@@ -81,7 +81,7 @@ export function ReceiveScreen({ session, address }: { session: ChainSession; add
       <div className="receive">
         <div className="receive__qr">
           {qr && <img src={qr} alt={`QR do endereço ${address}`} />}
-          {qrError !== null && <Fault {...describeFault(qrError, 'O QR do endereço')} />}
+          {qrError !== null && <Fault {...describeFault(qrError, 'O QR do endereço não foi gerado. O endereço em texto continua correto.')} />}
         </div>
 
         <div className="receive__side stack">
@@ -108,7 +108,7 @@ export function ReceiveScreen({ session, address }: { session: ChainSession; add
 
           {outcome !== null && <p className="note">{OUTCOME_TEXT[outcome]}</p>}
 
-          {copyError !== null && <Fault {...describeFault(copyError, 'A cópia do endereço')} />}
+          {copyError !== null && <Fault {...describeFault(copyError, 'O endereço não foi copiado. Selecione o texto acima e copie à mão.')} />}
 
           <p className="note">
             A cópia tem prazo porque programa que troca endereço na área de transferência é o

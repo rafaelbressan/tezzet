@@ -135,7 +135,7 @@ export function App() {
 
       <main className="app__main">
         {catalog.state.kind === 'error' && (
-          <Fault {...describeFault(catalog.state.error, 'A configuração de rede', catalog.state.attempts)} />
+          <Fault {...describeFault(catalog.state.error, 'O app não abre sem saber em que rede está.', catalog.state.attempts)} />
         )}
 
         {pendingNetworkId !== null && catalog.state.kind === 'ready' && (

@@ -16,7 +16,10 @@ export interface TransferEstimate {
 export interface TransferRequest {
   readonly destination: string;
   readonly amountMutez: bigint;
-  /** Parte líquida do saldo. O que está em stake não paga transferência. */
+  /**
+   * O gastável de verdade — saldo cheio menos stake, menos o que está saindo
+   * de stake, menos bond. Nada além disso pode financiar uma transferência.
+   */
   readonly spendableMutez: bigint;
   readonly estimate: TransferEstimate;
 }
@@ -66,8 +69,8 @@ export function planTransfer(request: TransferRequest): TransferPlan {
     throw new TransferValidationError(
       `faltam ${formatXtz(missing)} XTZ: enviar ${formatXtz(request.amountMutez)} custa ` +
         `${formatXtz(totalMutez)} XTZ com taxa de ${formatXtz(feeMutez)} e alocação de ` +
-        `${formatXtz(burnMutez)}, e o saldo disponível é ${formatXtz(request.spendableMutez)} XTZ ` +
-        '(o que está em stake não entra)',
+        `${formatXtz(burnMutez)}, e o gastável é ${formatXtz(request.spendableMutez)} XTZ ` +
+        '(o que está em stake, saindo de stake ou em bond não entra)',
     );
   }
 

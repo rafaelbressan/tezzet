@@ -71,7 +71,7 @@ export function HistoryScreen({ session, address }: { session: ChainSession; add
         {readAt && <ReadAt at={readAt} indexerLevel={indexerLevel} />}
       </div>
 
-      {error !== null && <Fault {...describeFault(error, 'O histórico', attempts)} />}
+      {error !== null && <Fault {...describeFault(error, 'O histórico não foi lido.', attempts)} />}
 
       {entries.length === 0 && loading && <Skeleton width="30ch" label="Histórico" />}
 

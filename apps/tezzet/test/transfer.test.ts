@@ -50,8 +50,8 @@ describe('planTransfer', () => {
     ).toThrow(TransferValidationError);
   });
 
-  it('o teto é o saldo líquido: o que está em stake não paga transferência', () => {
-    // Conta com 10 XTZ, 9 em stake: só 1 XTZ é gastável.
+  it('o teto é o gastável: stake, saindo de stake e bond não pagam transferência', () => {
+    // Conta com 10 XTZ cheios, 9 congelados: só 1 XTZ é gastável.
     expect(() =>
       planTransfer({
         destination: DESTINO,
@@ -59,6 +59,6 @@ describe('planTransfer', () => {
         spendableMutez: 1_000_000n,
         estimate: ESTIMATIVA,
       }),
-    ).toThrow(/o que está em stake não entra/);
+    ).toThrow(/não entra/);
   });
 });

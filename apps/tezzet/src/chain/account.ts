@@ -9,17 +9,26 @@ import {
 /**
  * Saldo de uma conta, lido da TzKT.
  *
- * Desde o Adaptive Issuance "saldo" deixou de ser um número. O que está em
- * stake não é gastável e conta com peso cheio para o baker; o que está
- * delegado é gastável e conta com peso reduzido; o que está saindo de stake
- * não é nem um nem outro até ser finalizado. Mostrar um número só esconde
- * exatamente a parte que o usuário precisa decidir.
+ * Desde o Adaptive Issuance "saldo" deixou de ser um número. O `balance` da
+ * TzKT é o **saldo cheio** (`full_balance` do RPC) e contém três coisas que
+ * não se gastam:
  *
- * A relação `balance = stakedBalance + delegado` foi conferida contra dado
- * real da TzKT em 2026-08-31 (tz1fwnfJNgiDACshK9avfRfFbMaXrs3ghoJa:
- * 235999207943 − 235795238232 = 203969711 = ownDelegatedBalance). Ela é
- * checada em execução: se não valer, o app levanta em vez de mostrar um
- * número que ninguém conferiu.
+ *     balance = gastável + stakedBalance + unstakedBalance + bonds
+ *
+ * Conferido contra a mainnet em 2026-09-01, `tz1aLq132WVXyh7AmnNiVbWMRDS7rwGatLiQ`:
+ *
+ *     24 015 668 853 − 20 015 435 724 − 4 000 000 000 = 233 129
+ *
+ * e `GET /chains/main/blocks/head/context/contracts/{addr}/balance` — o
+ * gastável, segundo o próprio nó — devolve exatamente 233 129.
+ *
+ * A versão anterior deste arquivo fazia `gastável = balance − staked` e
+ * esquecia o `unstakedBalance`. Nessa conta ela liberava gastar 4 000 XTZ que
+ * a cadeia não deixa mover: a pessoa assinaria e a operação seria recusada.
+ * O teste que deveria pegar isso afirmava `total === staked + delegado`, que
+ * é a própria definição da linha — verdadeira para qualquer entrada. Hoje a
+ * conferência é contra o RPC, que é outra fonte
+ * (`test/contract/shadownet.contract.test.ts`).
  */
 export interface AccountSnapshot {
   readonly address: string;
@@ -29,14 +38,22 @@ export interface AccountSnapshot {
    * verdade conhecida, e a interface diz "nunca usada" em vez de "0,000000".
    */
   readonly seenOnChain: boolean;
-  /** Saldo total. Inclui o que está em stake. */
+  /** Saldo cheio. Contém o que está em stake, saindo de stake e em bond. */
   readonly total: bigint;
+  /**
+   * O que pode financiar uma transferência **agora**. É o único número que a
+   * tela de envio pode usar como teto.
+   */
+  readonly spendable: bigint;
   /** Congelado em stake. Não é gastável. */
   readonly staked: bigint;
-  /** Saindo de stake, aguardando finalização. Não é gastável nem delegado. */
+  /**
+   * Saindo de stake (congelado + finalizável), aguardando finalização. Não é
+   * gastável até ser finalizado.
+   */
   readonly unstaked: bigint;
-  /** `total − staked`: a parte líquida, que é a que delega. */
-  readonly delegated: bigint;
+  /** Bond de rollup, congelado. Quase sempre zero numa conta de usuário. */
+  readonly bonds: bigint;
   /** Baker para quem a conta delega, ou `null` quando não delega. */
   readonly delegate: { readonly address: string; readonly alias?: string } | null;
   /** Quando esta leitura foi feita. Sem isso, valor velho é igual a valor novo. */
@@ -74,9 +91,10 @@ export async function fetchAccount(
       address,
       seenOnChain: false,
       total: 0n,
+      spendable: 0n,
       staked: 0n,
       unstaked: 0n,
-      delegated: 0n,
+      bonds: 0n,
       delegate: null,
       readAt,
       ...(indexerLevel === undefined ? {} : { indexerLevel }),
@@ -84,16 +102,19 @@ export async function fetchAccount(
   }
 
   // Nenhum destes campos ganha default. Um `|| 0` aqui é o mesmo defeito que
-  // fez o TAPS pagar zero a todos os delegadores, em silêncio.
+  // fez o TAPS pagar zero a todos os delegadores, em silêncio — e um campo
+  // congelado esquecido é o que faz o app liberar gastar o que não existe.
   const total = requireMutez(raw, 'balance', WHERE);
   const staked = requireMutez(raw, 'stakedBalance', WHERE);
   const unstaked = requireMutez(raw, 'unstakedBalance', WHERE);
+  const bonds = requireMutez(raw, 'rollupBonds', WHERE) + requireMutez(raw, 'smartRollupBonds', WHERE);
 
-  if (staked > total) {
+  const frozen = staked + unstaked + bonds;
+  if (frozen > total) {
     throw new InvariantViolationError(
-      'balance >= stakedBalance',
-      `${address}: balance ${total} mutez é menor que stakedBalance ${staked} mutez — ` +
-        'a divisão entre stake e delegação não fecha e nenhum dos dois números pode ser mostrado',
+      'balance >= stakedBalance + unstakedBalance + bonds',
+      `${address}: congelado ${frozen} mutez (stake ${staked}, saindo ${unstaked}, bond ${bonds}) ` +
+        `é maior que o saldo cheio ${total} mutez — a divisão não fecha e nenhum dos números pode ser mostrado`,
     );
   }
 
@@ -101,9 +122,10 @@ export async function fetchAccount(
     address,
     seenOnChain: true,
     total,
+    spendable: total - frozen,
     staked,
     unstaked,
-    delegated: total - staked,
+    bonds,
     delegate: parseDelegate(raw),
     readAt,
     ...(indexerLevel === undefined ? {} : { indexerLevel }),

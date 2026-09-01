@@ -1,3 +1,5 @@
+// Antes de qualquer import do Beacon: o SDK toca `Buffer` no carregamento.
+import '../polyfills';
 import { NetworkType } from '@ecadlabs/beacon-dapp';
 import { BeaconWallet } from '@taquito/beacon-wallet';
 import { TezosToolkit } from '@taquito/taquito';

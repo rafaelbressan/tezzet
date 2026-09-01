@@ -51,7 +51,7 @@ export function ConnectScreen({
           {busy ? 'Aguardando a carteira…' : 'Conectar carteira'}
         </button>
       </div>
-      {error !== null && <Fault {...describeFault(error, 'A conexão')} />}
+      {error !== null && <Fault {...describeFault(error, 'A conexão com a carteira não foi feita.')} />}
     </section>
   );
 }
