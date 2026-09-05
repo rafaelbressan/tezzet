@@ -238,3 +238,89 @@ body {
   margin: -1px; padding: 0; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* --- delegação e stake ----------------------------------------------- */
+
+/* A diferença entre delegar e stakear. Tabela de verdade, com cabeçalho de
+   linha e de coluna: quem usa leitor de tela precisa ouvir "Se o baker for
+   punido, stakear, você perde parte do que congelou" como uma frase. */
+.difference {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+.difference__caption {
+  text-align: left;
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c-steel-dim);
+  padding-bottom: var(--s-2);
+}
+.difference th[scope='col'] {
+  text-align: left;
+  font-family: var(--f-display);
+  font-size: var(--t-base);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-paper);
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  border-bottom: 1px solid var(--c-steel);
+}
+.difference th[scope='row'] {
+  text-align: left;
+  font-weight: 600;
+  color: var(--c-steel-dim);
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  border-bottom: 1px solid var(--c-rule-dark);
+  vertical-align: top;
+  white-space: nowrap;
+}
+.difference td {
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  border-bottom: 1px solid var(--c-rule-dark);
+  color: var(--c-steel-dim);
+  vertical-align: top;
+}
+/* A coluna da ação em que a pessoa está fica legível; a outra continua
+   presente. Esconder a outra seria esconder a comparação. */
+.difference__here { color: var(--c-paper-dim); }
+.difference th[aria-current='true'] { border-bottom-color: var(--c-gold); }
+
+.baker__name {
+  font-family: var(--f-display);
+  font-size: var(--t-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-paper);
+}
+.baker__section {
+  font-family: var(--f-display);
+  font-size: var(--t-base);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-steel-dim);
+  margin: 0;
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--c-rule-dark);
+}
+.baker__rate {
+  font-family: var(--f-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-md);
+  color: var(--c-paper);
+  margin: 0;
+}
+
+/* O aviso da espera do unstake. Ele é a única coisa nesta tela que a pessoa
+   não pode desfazer depois, então tem a marca de atenção do sistema e fica
+   acima do botão — nunca abaixo, nunca depois da confirmação. */
+.wait {
+  border-left: 3px solid var(--c-attention);
+  padding: var(--s-3) var(--s-4);
+  margin: var(--s-4) 0 0;
+  font-size: var(--t-sm);
+  color: var(--c-paper-dim);
+  max-width: var(--measure);
+}

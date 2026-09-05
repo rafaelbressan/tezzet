@@ -6,18 +6,25 @@ import { createChainSession } from './state/session';
 import { useAsync } from './state/useAsync';
 import { BalanceScreen } from './screens/BalanceScreen';
 import { ConnectScreen } from './screens/ConnectScreen';
+import { DelegateScreen } from './screens/DelegateScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { ReceiveScreen } from './screens/ReceiveScreen';
 import { SendScreen } from './screens/SendScreen';
+import { StakeScreen } from './screens/StakeScreen';
 import { Address, ExternalLink, Fault, NetworkBadge, Skeleton } from './ui/primitives';
 
 const NETWORK_STORAGE_KEY = 'tezzet.rede';
 
+// Delegar e stakear são abas separadas de propósito: são duas ações
+// diferentes, com riscos diferentes, e juntá-las numa aba "Render" faria a
+// interface dizer que são a mesma coisa com um botão a mais.
 const TABS = [
   { id: 'saldo', label: 'Saldo' },
   { id: 'historico', label: 'Histórico' },
   { id: 'receber', label: 'Receber' },
   { id: 'enviar', label: 'Enviar' },
+  { id: 'delegar', label: 'Delegar' },
+  { id: 'stake', label: 'Stake' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -187,6 +194,8 @@ export function App() {
             {tab === 'historico' && <HistoryScreen session={session} address={address} />}
             {tab === 'receber' && <ReceiveScreen session={session} address={address} />}
             {tab === 'enviar' && <SendScreen session={session} address={address} />}
+            {tab === 'delegar' && <DelegateScreen session={session} address={address} />}
+            {tab === 'stake' && <StakeScreen session={session} address={address} />}
           </>
         )}
       </main>

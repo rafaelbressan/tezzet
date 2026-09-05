@@ -1,17 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  MutezParseError,
-  resolveOperationState,
-  tezToMutez,
-  type OperationOutcome,
-} from '@tezos-suite/chain';
+import { useCallback, useState } from 'react';
+import { MutezParseError, tezToMutez } from '@tezos-suite/chain';
 import { fetchAccount } from '../chain/account';
-import { explorerOperationUrl } from '../chain/explorer';
 import { describeFault } from '../lib/faults';
 import { formatXtz } from '../lib/format';
 import type { ChainSession } from '../state/session';
 import { planTransfer, type TransferPlan } from '../wallet/transfer';
-import { Amount, ExternalLink, Fault } from '../ui/primitives';
+import { OperationReceipt, SentOperation } from '../ui/operation';
+import { Amount, Fault } from '../ui/primitives';
 
 /**
  * Enviar XTZ **sem tocar em chave**.
@@ -24,8 +19,6 @@ import { Amount, ExternalLink, Fault } from '../ui/primitives';
  * por `number` perderia o valor antes de qualquer conta: `0.00397 * 1e6`
  * arredonda para 3969 em vez de 3970.
  */
-const POLL_INTERVAL_MS = 8_000;
-
 type Stage =
   | { readonly kind: 'form' }
   | { readonly kind: 'reviewing' }
@@ -157,7 +150,13 @@ export function SendScreen({ session, address }: { session: ChainSession; addres
       )}
 
       {stage.kind === 'sent' && (
-        <Sent session={session} hash={stage.hash} plan={stage.plan} branchLevel={stage.branchLevel} />
+        <SentOperation
+          session={session}
+          hash={stage.hash}
+          branchLevel={stage.branchLevel}
+          what={`${formatXtz(stage.plan.amountMutez)} XTZ enviados para ${stage.plan.destination}.`}
+          cost="A confirmação não foi lida. A operação já foi injetada — confira no explorador antes de reenviar."
+        />
       )}
 
       {error !== null && <Fault {...describeSendFault(error)} />}
@@ -178,18 +177,15 @@ function describeSendFault(error: unknown) {
 
 function Receipt({ plan }: { plan: TransferPlan }) {
   return (
-    <div className="receipt">
+    <OperationReceipt
+      feeMutez={plan.feeMutez}
+      burnMutez={plan.burnMutez}
+      gasLimit={plan.gasLimit}
+      storageLimit={plan.storageLimit}
+    >
       <p className="receipt__line">
         <span>Valor</span>
         <Amount mutez={plan.amountMutez} />
-      </p>
-      <p className="receipt__line">
-        <span>Taxa estimada</span>
-        <Amount mutez={plan.feeMutez} />
-      </p>
-      <p className="receipt__line">
-        <span>Alocação do destino</span>
-        <Amount mutez={plan.burnMutez} />
       </p>
       <p className="receipt__line">
         <span>Total a debitar</span>
@@ -199,84 +195,7 @@ function Receipt({ plan }: { plan: TransferPlan }) {
         <span>Sobra no gastável</span>
         <Amount mutez={plan.remainingMutez} />
       </p>
-      <p className="note">
-        gas {plan.gasLimit} · storage {plan.storageLimit} · destino {plan.destinationKind}
-      </p>
-    </div>
-  );
-}
-
-const OUTCOME_TEXT: Record<OperationOutcome['status'], string> = {
-  pending: 'Injetada. Ainda não apareceu em um bloco.',
-  included: 'Em um bloco, aguardando os dois níveis que fecham a confirmação.',
-  confirmed: 'Confirmada: relida no mesmo bloco, com dois níveis por cima.',
-  failed: 'A cadeia recusou a operação.',
-  expired: 'O branch expirou sem a operação entrar. Ela nunca vai entrar, e reenviar agora é seguro.',
-};
-
-/**
- * Confirmação pelo critério do Tenderbake: incluída no nível L, cabeça em
- * L+2, e **relida** confirmando bloco e situação. Contar blocos sozinho
- * assume que a cadeia que você viu é a que ficou.
- */
-function Sent({
-  session,
-  hash,
-  plan,
-  branchLevel,
-}: {
-  session: ChainSession;
-  hash: string;
-  plan: TransferPlan;
-  branchLevel: number;
-}) {
-  const [outcome, setOutcome] = useState<OperationOutcome | null>(null);
-  const [error, setError] = useState<unknown>(null);
-  const stop = useRef(false);
-
-  useEffect(() => {
-    stop.current = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const poll = async () => {
-      try {
-        const constants = await session.constants.get();
-        const result = await resolveOperationState(session.http, session.head, hash, {
-          branchLevel,
-          constants,
-        });
-        if (stop.current) return;
-        setOutcome(result);
-        if (result.status === 'pending' || result.status === 'included') {
-          timer = setTimeout(() => void poll(), POLL_INTERVAL_MS);
-        }
-      } catch (cause) {
-        if (!stop.current) setError(cause);
-      }
-    };
-
-    void poll();
-    return () => {
-      stop.current = true;
-      if (timer) clearTimeout(timer);
-    };
-  }, [session, hash, branchLevel]);
-
-  return (
-    <div className="stack">
-      <p className="note note--strong">
-        {formatXtz(plan.amountMutez)} XTZ enviados para {plan.destination}.
-      </p>
-      <p>
-        <ExternalLink href={explorerOperationUrl(session.network, hash)}>
-          <span className="t-ophash">{hash}</span>
-        </ExternalLink>
-      </p>
-      <p className="note note--strong" role="status">
-        {outcome ? OUTCOME_TEXT[outcome.status] : 'Consultando a cadeia…'}
-        {outcome?.level !== undefined && ` Nível ${outcome.level}, cabeça em ${outcome.headLevel}.`}
-      </p>
-      {error !== null && <Fault {...describeFault(error, 'A confirmação não foi lida. A operação já foi injetada — confira no explorador antes de reenviar.')} />}
-    </div>
+      <p className="note">destino {plan.destinationKind}</p>
+    </OperationReceipt>
   );
 }

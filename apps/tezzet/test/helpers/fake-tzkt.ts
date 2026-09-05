@@ -36,3 +36,34 @@ export function fakeTzKT(responses: readonly FakeResponse[], maxLagBlocks = MAX_
   };
   return { calls, http: new TzKTHttp(TEST_NETWORK, { fetchImpl, maxRetries: 0, maxLagBlocks }) };
 }
+
+/**
+ * TzKT falso que responde por caminho, não por ordem.
+ *
+ * Uma tela dispara várias leituras em paralelo e o limite de concorrência do
+ * cliente decide quem sai primeiro. Um falso por ordem passaria a testar a
+ * ordem de agendamento — que não é o que se quer afirmar — e reprovaria ao
+ * primeiro `Promise.all` reordenado.
+ */
+export function routedTzKT(
+  routes: readonly (readonly [pattern: string, response: FakeResponse])[],
+  maxLagBlocks = MAX_INDEXER_LAG_BLOCKS,
+) {
+  const calls: string[] = [];
+  const fetchImpl: typeof fetch = async (input) => {
+    const url = String(input);
+    calls.push(url);
+    const match = routes.find(([pattern]) => url.includes(pattern));
+    if (!match) throw new Error(`routedTzKT: nenhuma rota casa com ${url}`);
+    const [, response] = match;
+    const status = response.status ?? 200;
+    const headers = new Headers({
+      'tzkt-level': '100',
+      'tzkt-known-level': '100',
+      ...(response.headers ?? {}),
+    });
+    const body = response.body === undefined ? '' : JSON.stringify(response.body);
+    return new Response(status === 204 ? null : body, { status, headers });
+  };
+  return { calls, http: new TzKTHttp(TEST_NETWORK, { fetchImpl, maxRetries: 0, maxLagBlocks }) };
+}

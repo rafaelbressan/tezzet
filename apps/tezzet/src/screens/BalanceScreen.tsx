@@ -117,7 +117,7 @@ export function BalanceScreen({ session, address }: { session: ChainSession; add
                 {state.value.delegate.alias ? ` (${state.value.delegate.alias})` : ''}.
               </>
             ) : (
-              'Esta conta não delega para nenhum baker. Delegação e staking são a próxima onda.'
+              'Esta conta não delega para nenhum baker, e um saldo que não delega não produz nada. A aba Delegar mostra os números de um baker antes de você decidir.'
             )}
           </p>
         </div>
