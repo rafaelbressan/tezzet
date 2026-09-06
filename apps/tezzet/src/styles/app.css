@@ -282,10 +282,69 @@ body {
   color: var(--c-steel-dim);
   vertical-align: top;
 }
+/* Em tela larga quem rotula a coluna é o `<th scope="col">`. `display: none`
+   e não `visually-hidden`: assim o rótulo sai também da árvore de
+   acessibilidade, em vez de ser lido duas vezes por linha. */
+.difference__for { display: none; }
 /* A coluna da ação em que a pessoa está fica legível; a outra continua
    presente. Esconder a outra seria esconder a comparação. */
 .difference__here { color: var(--c-paper-dim); }
 .difference th[aria-current='true'] { border-bottom-color: var(--c-gold); }
+
+/* Abaixo de 600 px a comparação empilha, uma linha por bloco.
+   Três colunas de texto não cabem em 375 px: a tabela media 378 px, a página
+   inteira deslizava para o lado e a linha da punição — a que mais importa —
+   ficava com o lado do stake fora da tela. Rolagem lateral não é uma
+   comparação: ela mostra um lado de cada vez, que é exatamente o que este
+   bloco existe para impedir. */
+@media (max-width: 600px) {
+  .difference,
+  .difference tbody,
+  .difference tr,
+  .difference th,
+  .difference td {
+    display: block;
+  }
+  /* Os rótulos de coluna passam para dentro de cada célula. */
+  .difference thead { display: none; }
+  /* Sem isto a legenda continua `table-caption` dentro de um pai que já é
+     bloco, encolhe para a largura do conteúdo e uma frase vira oito linhas. */
+  .difference__caption { display: block; }
+
+  .difference tr {
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-rule-dark);
+  }
+  .difference tr:last-child { border-bottom: 0; }
+
+  .difference th[scope='row'] {
+    white-space: normal;
+    border-bottom: 0;
+    padding: 0 0 var(--s-2);
+    color: var(--c-paper);
+    font-family: var(--f-display);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .difference td {
+    display: flex;
+    gap: var(--s-3);
+    border-bottom: 0;
+    padding: var(--s-1) 0;
+  }
+
+  .difference__for {
+    display: block;
+    flex: 0 0 5.5rem;
+    font-family: var(--f-data);
+    font-size: var(--t-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--c-steel-dim);
+  }
+  .difference__value { flex: 1; overflow-wrap: anywhere; }
+}
 
 .baker__name {
   font-family: var(--f-display);

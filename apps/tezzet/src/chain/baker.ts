@@ -85,8 +85,8 @@ export interface BakerSnapshot {
   readonly minDelegated: bigint;
 
   /**
-   * A fatia que o baker retira do rendimento de quem stakeia com ele, em
-   * bilionésimos. **É a única taxa que a cadeia conhece e cobra sozinha.**
+   * A comissão que o baker retira do rendimento de quem stakeia com ele, em
+   * bilionésimos. **É a única comissão que a cadeia conhece e cobra sozinha.**
    */
   readonly stakingEdgeBillionth: bigint;
   /** Quanto stake de terceiros o baker aceita, em múltiplos do stake próprio (milionésimos). */
@@ -338,7 +338,7 @@ export async function fetchBaker(
 }
 
 /**
- * A fatia do baker sobre o rendimento de stake, em texto. Bilionésimo, nunca
+ * A comissão do baker sobre o rendimento de stake, em texto. Bilionésimo, nunca
  * porcentagem crua: ler 90 000 000 como porcentagem dá 90 000 000 %.
  */
 export function formatEdgePercent(edgeBillionth: bigint): string {

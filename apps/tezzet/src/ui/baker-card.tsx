@@ -94,7 +94,7 @@ export function BakerCard({
           )}
 
           <p className="note note--strong">
-            <strong>A taxa de delegação não existe na cadeia.</strong> Quem recebe a recompensa da
+            <strong>A comissão do baker sobre delegação não existe na cadeia.</strong> Quem recebe a recompensa da
             delegação é o baker, no saldo dele; quanto ele repassa e quando é combinação dele, fora
             da cadeia, e o Tezzet não tem como verificar. O número abaixo é o teto: tudo que ele
             recebeu por unidade delegada. Você nunca vai receber mais do que isso.
@@ -121,7 +121,7 @@ export function BakerCard({
         <section className="stack">
           <h3 className="baker__section">Stakear com este baker</h3>
           <div className="balance__split">
-            <Cell label="Fatia do baker (cobrada pela cadeia)">
+            <Cell label="Comissão do baker (cobrada pela cadeia)">
               {formatEdgePercent(baker.stakingEdgeBillionth)}
             </Cell>
             <Cell label="Cabe de stake">
@@ -150,8 +150,8 @@ export function BakerCard({
           )}
 
           <p className="note">
-            A fatia acima é cobrada pelo protocolo, na cadeia, antes de o valor chegar até você —
-            não é promessa do baker. É a única taxa que o Tezzet consegue verificar.
+            A comissão acima é cobrada pelo protocolo, na cadeia, antes de o valor chegar até
+            você — não é promessa do baker. É a única comissão que o Tezzet consegue verificar.
           </p>
 
           {stakingYield.kind === 'unavailable' ? (

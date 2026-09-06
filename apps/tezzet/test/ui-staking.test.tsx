@@ -79,11 +79,31 @@ const DELEGADO_NA_TZKT = {
   lastActivityTime: '2026-09-05T22:52:37Z',
 };
 
-function montarTela() {
+/** Pedido real da TzKT, adaptado: já liberado e com punição, que é a linha
+    onde mais coisa pode sair errada na tela. */
+const PEDIDO_LIBERADO = {
+  id: 27514,
+  cycle: 1344,
+  baker: { address: BAKER },
+  staker: { address: CONTA },
+  requestedAmount: 900_000,
+  restakedAmount: 0,
+  finalizedAmount: 0,
+  slashedAmount: 5_000,
+  actualAmount: 900_000,
+  status: 'finalizable',
+  unlockCycle: 1348,
+  unlockLevel: 14_865_889,
+  unlockTime: '2026-09-09T05:11:43Z',
+};
+
+const PEDIDO_ESPERANDO = { ...PEDIDO_LIBERADO, id: 27515, status: 'pending', slashedAmount: 0 };
+
+function montarTela(pedidos: readonly unknown[] = []) {
   const { http } = routedTzKT([
     ['/v1/head', { body: { chainId: 'NetXdQprcVkpaWU', level: 14_818_898, cycle: 1344, protocol: 'PsUshuai', knownLevel: 14_818_898 } }],
     ['/v1/cycles/1344', { body: { index: 1344, firstLevel: 14_808_289 } }],
-    ['/v1/staking/unstake_requests', { body: [] }],
+    ['/v1/staking/unstake_requests', { body: pedidos }],
     [`/v1/accounts/${CONTA}`, { body: CONTA_COM_STAKE }],
     [`/v1/delegates/${BAKER}`, { body: DELEGADO_NA_TZKT }],
     ['/v1/rewards/split/', { status: 204 }],
@@ -132,11 +152,11 @@ describe('a tela de stake', () => {
     });
   });
 
-  it('mostra a fatia que a cadeia cobra, e diz que é a única verificável', async () => {
+  it('mostra a comissão que a cadeia cobra, e diz que é a única verificável', async () => {
     montarTela();
 
     await waitFor(() => expect(screen.getByText('9,00%')).toBeDefined());
-    expect(screen.getByText(/única taxa que o Tezzet consegue verificar/)).toBeDefined();
+    expect(screen.getByText(/única comissão que o Tezzet consegue verificar/)).toBeDefined();
   });
 
   it('sem ciclo fechado, recusa mostrar rendimento em vez de mostrar zero', async () => {
@@ -146,5 +166,57 @@ describe('a tela de stake', () => {
       expect(screen.getByText(/Sem rendimento para mostrar:/)).toBeDefined();
     });
     expect(screen.getByText(/Um número aqui seria inventado/)).toBeDefined();
+  });
+});
+
+/**
+ * Os cinco pontos da revisão de desenho de 2026-09-06. Cada um vira um teste
+ * porque os cinco eram invisíveis para o compilador: unidade repetida, número
+ * cru, cor invertida, palavra divergente e uma tabela que só quebra em 375 px.
+ */
+describe('o que a revisão de desenho apontou', () => {
+  it('a comparação carrega o rótulo da coluna dentro da célula, para quando ela empilha', () => {
+    render(<DelegateVersusStake highlight="delegating" />);
+
+    // Em tela estreita o `<thead>` sai e estes rótulos são a única coisa que
+    // diz qual valor é de qual ação.
+    expect(screen.getAllByText('Delegar', { selector: '.difference__for' })).toHaveLength(4);
+    expect(screen.getAllByText('Stakear', { selector: '.difference__for' })).toHaveLength(4);
+  });
+
+  it('não escreve XTZ duas vezes — <Amount> já traz a unidade', async () => {
+    montarTela();
+
+    const dica = await screen.findByText(/que é o que está congelado hoje/);
+    expect(dica.textContent?.match(/XTZ/g)).toHaveLength(1);
+  });
+
+  it('o valor perdido por punição sai formatado, não em mutez cru', async () => {
+    montarTela([PEDIDO_LIBERADO]);
+
+    const punicao = await screen.findByText(/punição levou/);
+    expect(punicao.textContent).toContain('0.005000');
+    expect(punicao.textContent).not.toContain('5000 mutez');
+  });
+
+  it('"liberado" é atenção e "esperando" é neutro — verde leria como resolvido', async () => {
+    const { container } = render(<div />);
+    void container;
+    montarTela([PEDIDO_LIBERADO, PEDIDO_ESPERANDO]);
+
+    const liberado = await screen.findByText('liberado');
+    const esperando = screen.getByText('esperando');
+
+    // `liberado` é a linha que ainda pede a sua assinatura.
+    expect(liberado.className).toContain('t-status--pending');
+    expect(liberado.className).not.toContain('t-status--paid');
+    expect(esperando.className).toContain('t-status--simulated');
+  });
+
+  it('chama de comissão do baker, que é a palavra do NARRATIVE.md', async () => {
+    montarTela();
+
+    await waitFor(() => expect(screen.getByText(/Comissão do baker/)).toBeDefined());
+    expect(screen.queryByText(/Fatia do baker/)).toBeNull();
   });
 });

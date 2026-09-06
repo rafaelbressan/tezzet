@@ -38,9 +38,9 @@ export interface CycleRecord {
   /** Saldo de snapshot: a base sobre a qual o rendimento do ciclo aconteceu. */
   readonly externalStaked: bigint;
   readonly delegated: bigint;
-  /** Creditado na cadeia a quem stakeia, já descontada a fatia do baker. */
+  /** Creditado na cadeia a quem stakeia, já descontada a comissão do baker. */
   readonly stakedShared: bigint;
-  /** A fatia que o baker reteve do rendimento de quem stakeia. */
+  /** A comissão que o baker reteve do rendimento de quem stakeia. */
   readonly stakedEdge: bigint;
   /** Caiu no saldo líquido do baker. É o teto do que a delegação pode render. */
   readonly delegatedRewards: bigint;

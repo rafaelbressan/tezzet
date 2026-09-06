@@ -57,10 +57,17 @@ export function DelegateVersusStake({ highlight }: { highlight: 'delegating' | '
           <tr key={row.what}>
             <th scope="row">{row.what}</th>
             <td className={highlight === 'delegating' ? 'difference__here' : undefined}>
-              {row.delegating}
+              {/* Rótulo de verdade no DOM, não `content` de CSS: em tela
+                  estreita o cabeçalho de coluna sai, e sem ele os dois valores
+                  ficariam soltos, um embaixo do outro, sem dizer qual é qual.
+                  Em tela larga ele é `display: none` e some da árvore de
+                  acessibilidade, onde o `<th scope="col">` já faz o trabalho. */}
+              <span className="difference__for">Delegar</span>
+              <span className="difference__value">{row.delegating}</span>
             </td>
             <td className={highlight === 'staking' ? 'difference__here' : undefined}>
-              {row.staking}
+              <span className="difference__for">Stakear</span>
+              <span className="difference__value">{row.staking}</span>
             </td>
           </tr>
         ))}

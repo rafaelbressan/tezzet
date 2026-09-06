@@ -270,7 +270,7 @@ export function StakeScreen({ session, address }: { session: ChainSession; addre
                   placeholder="0.000000"
                 />
                 <span className="t-field__hint">
-                  Até <Amount mutez={account.staked} /> XTZ, que é o que está congelado hoje.
+                  Até <Amount mutez={account.staked} />, que é o que está congelado hoje.
                 </span>
               </label>
 
@@ -395,13 +395,15 @@ function UnstakeRequestList({
                 <span className="t-cycle">{request.cycle}</span>
               </td>
               <td>
-                {/* A cor reforça; o texto carrega o significado. Um selo
-                    "pendente" ao lado de "liberado" diria as duas coisas. */}
+                {/* `liberado` é a linha que ainda pede alguma coisa de você:
+                    o dinheiro está parado esperando a sua assinatura. Verde
+                    leria como resolvido, então ela fica em atenção. `esperando`
+                    não pede nada de ninguém — é a cadeia contando o tempo. */}
                 <span
                   className={
                     request.status === 'finalizable'
-                      ? 't-status t-status--paid'
-                      : 't-status t-status--pending'
+                      ? 't-status t-status--pending'
+                      : 't-status t-status--simulated'
                   }
                 >
                   {request.status === 'finalizable' ? 'liberado' : 'esperando'}
@@ -415,7 +417,10 @@ function UnstakeRequestList({
               <td className="history__amount">
                 <Amount mutez={request.remaining} />
                 {request.slashed > 0n && (
-                  <span className="note"> · punição levou {request.slashed.toString()} mutez</span>
+                  <span className="note">
+                    {' · punição levou '}
+                    <Amount mutez={request.slashed} />
+                  </span>
                 )}
               </td>
             </tr>
@@ -426,7 +431,7 @@ function UnstakeRequestList({
       {finalizable > 0n ? (
         <>
           <p className="note note--strong">
-            <Amount mutez={finalizable} /> XTZ já cumpriram a espera e estão parados. Eles só voltam
+            <Amount mutez={finalizable} /> já cumpriram a espera e estão parados. Eles só voltam
             para o gastável com a operação abaixo — a cadeia não faz isso sozinha.
           </p>
           <div className="form__actions">
