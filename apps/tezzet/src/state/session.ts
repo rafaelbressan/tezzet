@@ -5,7 +5,6 @@ import {
   TzKTHttp,
 } from '@tezos-suite/chain';
 import type { TezzetNetwork } from '../config/networks';
-import { boundFetch } from '../lib/http';
 import { BeaconWalletPort, type WalletPort } from '../wallet/beacon';
 
 /**
@@ -30,19 +29,16 @@ export function createChainSession(
   network: TezzetNetwork,
   walletFactory: (network: TezzetNetwork) => WalletPort = (n) => new BeaconWalletPort(n),
 ): ChainSession {
-  // `boundFetch` em toda construção: a camada de cadeia chama o `fetch` como
-  // método de si mesma, e o navegador recusa isso. Ver `lib/http.ts`.
   const http = new TzKTHttp(network.endpoints, {
     maxLagBlocks: MAX_INDEXER_LAG_BLOCKS,
     concurrency: 2,
-    fetchImpl: boundFetch,
   });
   return {
     network,
     http,
     head: new TzKTHeadSource(http),
     constants: new ProtocolConstantsProvider(
-      new HttpRpcSource(network.endpoints, { fetchImpl: boundFetch }),
+      new HttpRpcSource(network.endpoints),
     ),
     wallet: walletFactory(network),
   };
