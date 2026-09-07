@@ -60,6 +60,21 @@ jobs:
       - run: npm run chain:fetch
       - run: npx tauri build --no-bundle
 
+  windows:
+    name: build Windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run chain:fetch
+      # Sem bundle: o portão é "compila e liga para Windows". Instalador com
+      # assinatura é outra coisa, e ela passa por certificado — decisão humana.
+      - run: npx tauri build --no-bundle
+
   android:
     name: build Android (APK)
     runs-on: ubuntu-24.04
