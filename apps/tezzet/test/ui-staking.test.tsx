@@ -251,10 +251,14 @@ describe('o que a revisão do stake pode prometer', () => {
     expect(screen.queryByText('Congelar em stake')).toBeNull();
   });
 
-  it('avisa que o valor congelado pode ficar alguns mutez abaixo do pedido', async () => {
+  it('avisa que o valor congelado não bate com o pedido, nos dois sentidos', async () => {
     await revisarStake('0.5');
 
-    expect(screen.getByText(/pode ficar alguns mutez abaixo do pedido/)).toBeDefined();
+    const aviso = screen.getByText(/não bate com o pedido/);
+    // Os dois sentidos, porque a medição achou os dois: dizer só "para baixo"
+    // seria trocar uma afirmação errada por outra.
+    expect(aviso.parentElement?.textContent).toContain('para baixo');
+    expect(aviso.parentElement?.textContent).toContain('para cima');
   });
 
   it('avisa que o valor em stake muda sozinho com o tempo', async () => {

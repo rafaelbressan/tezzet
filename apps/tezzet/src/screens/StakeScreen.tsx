@@ -351,22 +351,24 @@ export function StakeScreen({ session, address }: { session: ChainSession; addre
  * O aviso que faltava: o número que a tela promete não é o que a cadeia
  * congela.
  *
- * O protocolo não guarda stake externo em mutez — guarda em **pseudotokens**,
- * e converte nos dois sentidos. A ida arredonda para baixo, e a volta é
- * reavaliada a cada ciclo com o rendimento do baker. Duas consequências que
- * quem assina precisa ler antes de assinar, medidas na Shadownet em
- * 2026-09-06:
+ * O protocolo não guarda stake externo em mutez — guarda em **pseudotokens**.
+ * O crédito é `floor(pedido / taxa)`, que perde no máximo 1 mutez; o que se lê
+ * depois é `floor(pseudotokens × taxa_de_agora)`, e a taxa sobe a cada bloco
+ * com o rendimento do baker.
  *
- *  - **stake:** 50,000000 pedidos viraram 49,999999 congelados, e 90,000000
- *    viraram 89,999999. Só no primeiro stake da conta; por cima de stake
- *    existente entrou exato.
- *  - **unstake:** "continua em stake" prometeu 29,999999 e a cadeia mostrou
- *    30,000004 minutos depois, 30,000028 mais tarde. Ninguém assinou nada no
- *    meio.
+ * Por isso a diferença **não tem sinal fixo**, e é o erro fácil de cometer
+ * aqui. Assinando na Shadownet, quatro contas novas: três leram 1 mutez a
+ * menos que o pedido no bloco seguinte, uma leu 6 mutez a mais. Dez minutos
+ * depois, as que estavam abaixo já tinham passado por cima — 7,000000 pedidos
+ * lendo 7,000026. Escrever "arredonda para baixo" na tela seria trocar uma
+ * afirmação errada por outra.
  *
  * São centavos de mutez. O que não é centavo é a tela afirmar um valor exato
  * que ela não pode garantir: quem stakeia 50 e depois lê 49,999999 não tem
  * como saber se perdeu alguma coisa.
+ *
+ * A medição está em `tools/shadownet-stake-probe`, e o que ela registrou é
+ * afirmado em `test/stake-medido.test.ts`.
  */
 function PseudotokenNotice({ what }: { what: 'stake' | 'unstake' }) {
   return (
@@ -374,14 +376,15 @@ function PseudotokenNotice({ what }: { what: 'stake' | 'unstake' }) {
       {what === 'stake' ? (
         <>
           O valor acima é o que <strong>sai do gastável</strong>, e esse número é exato. O que
-          aparece <strong>em stake</strong> é convertido pelo protocolo e pode ficar alguns mutez
-          abaixo do pedido — na primeira vez que a conta stakeia, foi 1 mutez nas duas medições.
+          aparece <strong>em stake</strong> é convertido pelo protocolo e não bate com o pedido:
+          alguns mutez para baixo logo depois de assinar, e para cima com o passar dos blocos.
         </>
       ) : (
         <>
           <strong>&quot;Continua em stake&quot; é uma conta aproximada.</strong> O protocolo guarda
           o stake convertido e reavalia o valor sozinho: ele sobe com o rendimento do baker e desce
-          com punição, sem ninguém assinar nada.
+          com punição, sem ninguém assinar nada. Na medição, o saldo andou 6 mutez em noventa
+          segundos.
         </>
       )}{' '}
       O valor em stake muda sozinho com o tempo; confira sempre o que a cadeia mostra, não o que

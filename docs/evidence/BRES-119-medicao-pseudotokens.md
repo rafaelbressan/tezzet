@@ -2,35 +2,77 @@
 
 | | |
 |---|---|
-| **Data** | 2026-09-06 (assinado na Shadownet), releitura em 2026-09-07 |
+| **Data** | 2026-09-06 (achado ao validar a BRES-97), medição própria em 2026-09-07 |
 | **Redes** | Shadownet e Mainnet |
 | **Issue** | BRES-119 |
-| **Por que existe** | A revisão do stake afirmava números exatos em mutez. O protocolo guarda stake externo em **pseudotokens**: a ida arredonda para baixo e a volta é reavaliada com o tempo. Era o único ponto do fluxo em que o número prometido antes de assinar não era o que a cadeia registrou. |
+| **Por que existe** | A revisão do stake afirmava números exatos em mutez. O protocolo guarda stake externo em **pseudotokens**, e o valor em mutez é recalculado a cada leitura com uma taxa que sobe todo bloco. Era o único ponto do fluxo em que o número prometido antes de assinar não era o que a cadeia registrou. |
 
-## 1. Congelar perde alguns mutez na primeira conversão da conta
+## 1. O saldo em stake nunca é o valor pedido — e não erra sempre para o mesmo lado
 
-| conta | pedido | congelado | diferença | hash |
-|---|---|---|---|---|
-| `tz1USvTYjY1mPfrFkqMbdahAKNuhmu2eSczg` | 50,000000 | 49,999999 | −1 mutez | `oooDEQosxqr24D3tR9D1s7R6rSqYAHGadx9k8TmPjXawRCGwhFu` |
-| `tz1cJ9Bi4ygAYUvL31fmMCgK2GmWiTQ6ioGP` | 90,000000 | 89,999999 | −1 mutez | `onvznQ2e6993PgkmHcejpkqYVRg7XQ1rfzpHoDNYxbbB9ZrEwoc` |
+Quatro contas novas, quatro valores, assinadas com
+`tools/shadownet-stake-probe`. A coluna que importa é a última.
 
-Um stake por cima de stake existente entrou exato — 1,000000 → 1,000000,
-`onj93ZRNvHuQz2orwTqxjuHwmNAzKA45mimY8jUJBrCN3pwN6uy`. A perda é da primeira
-conversão.
+| conta | pedido | lido no bloco seguinte | dif. | relido às 11:10Z | dif. |
+|---|---|---|---|---|---|
+| `tz1ZX9RvjeGi1RXCV2syu3vE7CiNfvhmuNPT` | 50,000000 | 49,999999 | **−1** | (stakeou de novo) | |
+| `tz1T2rKnbmiaMWeQoncLmZLMUEpfaoSWQ9ia` | 7,000000 | 6,999999 | **−1** | 7,000026 | **+26** |
+| `tz1cttXMnXq2FF2whGr9zp6Ck6YuJhvnzt41` | 87,654321 | 87,654320 | **−1** | 87,654623 | **+302** |
+| `tz1fGoHcDpZTd84XZVpy1GYYqdXyJYJdBJmU` | 33,333333 | 33,333339 | **+6** | (stakeou de novo) | |
 
-A TzKT mostra as duas contabilidades lado a lado. Para a primeira conta, no
-`/v1/staking/updates`: `amount` 50000000 mutez, `pseudotokens` 44528255. O
-`/v1/accounts/…` traz `stakedBalance` **e** `stakedPseudotokens`, e é o
-segundo que a cadeia guarda.
+Hashes, na ordem: `ooETy9MRM56AJqL9L98Jihg4FAEdySYS96i7L274YEsf2wsE1A9`,
+`opCdD2yQwxuyW7cCwCC6T1rce9kEmaQRE91DTNx7ACtQR31PgQ7`,
+`oovgBzBkQVQeWj6XDeRgeKZ2pSvR1hQbqrd4PFdvqxmWVZKTqpK`,
+`ooK9uXw4tAguj5b2HTfV78H21A5xdr5735BS1i6EhB1C1V44Bxu`. As duas primeiras
+medições da issue (50,000000 → 49,999999 e 90,000000 → 89,999999, ao validar
+a BRES-97) batem com a coluna do bloco seguinte.
+
+### O mecanismo, que explica os dois sinais
+
+O crédito é `floor(pedido / taxa)` em pseudotokens — perde no máximo 1 mutez.
+O que se lê depois é `floor(pseudotokens × taxa_de_agora)`, e **a taxa sobe a
+cada bloco** com o rendimento do baker. Medida às 11:10Z na Shadownet, ela
+estava em ≈ 1,12300382 nas quatro contas.
+
+Então: ler no bloco seguinte mostra o arredondamento (−1). Esperar alguns
+blocos mostra a subida, que em minutos cobre o arredondamento e ultrapassa. A
+conta de 33,333333 leu +6 porque a leitura caiu alguns blocos depois do
+stake; a de 87,654321 saiu de −1 para +302 em dez minutos.
+
+### O que isso invalida
+
+**A afirmação que a issue propôs — `stakedBalance ≤ pedido` — é falsa.** Ela
+vale no instante da operação e deixa de valer minutos depois. Um teste escrito
+assim passaria hoje e reprovaria amanhã, sem nada ter quebrado.
+
+**E a tela não pode escrever "arredonda para baixo".** Seria trocar uma
+afirmação errada por outra. O que é verdade em qualquer instante é o que o
+aviso diz: o número não bate, e se move nos dois sentidos.
+
+### O relato original também precisa de correção
+
+A issue dizia que um stake por cima de stake existente "entrou exato". Não
+entra. Na mesma conta, um segundo stake de **1,000000** moveu o saldo de
+49,999999 para 51,000009 — **1,000010 creditados**
+(`ooeU1MjerREGec6EurxgwYaQ4SPViUHZ4nB4pyLSvJcYbyLcFQd`). O excedente é o saldo
+que já estava lá sendo reavaliado entre um bloco e outro.
 
 ## 2. "Continua em stake" é uma subtração sobre um saldo que a cadeia reavalia
 
 `planUnstake` devolvia `stakedMutez − amountMutez` e a tela mostrava isso como
 exato:
 
-- prometido 29,999999 → lido 30,000004 minutos depois → 30,000028 mais tarde;
-- `tz1cJ9Bi4ygAYUvL31fmMCgK2GmWiTQ6ioGP` saiu de 89,999999 para 90,000017 em
-  poucos blocos.
+- ao validar a BRES-97: prometido 29,999999 → lido 30,000004 minutos depois →
+  30,000028 mais tarde; e `tz1cJ9Bi4ygAYUvL31fmMCgK2GmWiTQ6ioGP` saiu de
+  89,999999 para 90,000017 em poucos blocos;
+- na medição de 2026-09-07, saindo 20,000000 de 51,000009
+  (`onkS6fzXefiFD8kAKtZtZigr3AFXRR7brZeP3dbCaBwSZGwNmYu`): a subtração dava
+  31,000009, a cadeia mostrou **31,000009 no bloco seguinte** e **31,000015
+  noventa segundos depois**.
+
+O detalhe que a medição acrescenta: no instante da operação a subtração
+**bate**. Ela só erra com o tempo. Uma tela que confira o número logo depois
+de assinar não vê nada de errado — e é por isso que o problema passou pela
+validação da BRES-97 sem ser encontrado no unstake.
 
 Ninguém assinou nada no meio. O valor sobe com o rendimento do baker e desce
 com punição.
@@ -68,12 +110,37 @@ inteiro); foi reproduzido em teste, virando o ciclo entre carregar e revisar.
 |---|---|
 | 1 e 2, no domínio | `apps/tezzet/test/staking-plan.test.ts` — o plano não tem campo de saldo em stake depois, e o do unstake se chama `stakedAfterApproxMutez` |
 | 1 e 2, na tela | `apps/tezzet/test/ui-staking.test.tsx` — a revisão diz "Sai do gastável", "Continua em stake, aproximado", e traz o aviso |
-| 3, contra a cadeia | `apps/tezzet/test/contract/staking.contract.test.ts` |
+| 1 e 2, contra o que a cadeia registrou ao assinar | `apps/tezzet/test/stake-medido.test.ts`, sobre a fixture medida |
+| 3, contra a cadeia viva | `apps/tezzet/test/contract/staking.contract.test.ts` |
 | 4 | `apps/tezzet/test/ui-staking.test.tsx` — o ciclo vira entre carregar e revisar |
 
-## O que não foi feito
+## 5. Como a medição é refeita
 
-O teste que a issue pediu — stakear um valor conhecido numa conta sem stake e
-afirmar `stakedBalance ≤ pedido` — exige assinar. Não há chave neste
-repositório, e `apps/tezzet/test/sem-chave.test.ts` existe para garantir que
-não vai haver. A mesma afirmação está feita pelo lado da leitura, na seção 3.
+`tools/shadownet-stake-probe` é a ferramenta que assina. Ela mora fora do app
+porque `apps/tezzet/test/sem-chave.test.ts` reprova qualquer pacote de
+assinatura dentro de `apps/tezzet` — e é para continuar reprovando: o Tezzet é
+uma carteira não-custodial, e a chave é da carteira do usuário.
+
+A chave da conta de teste fica **fora do repositório**, em caminho apontado por
+`TEZZET_SHADOWNET_KEY`, sem valor padrão: sem a variável o processo recusa
+subir. O `sem-chave.test.ts` foi estendido para conferir três coisas na
+ferramenta — nenhum `edsk…` commitado, nenhum caminho de segredo apontando
+para dentro do repositório, e nenhum valor padrão para a variável.
+
+```sh
+cd tools/shadownet-stake-probe && npm install
+export TEZZET_SHADOWNET_KEY=~/workspace/tezzet/shadownet-probe/secrets/shadownet.json
+node gerar-chave.mjs
+npx @tacoinfra/get-tez <tz1…> --amount 100 --network shadownet
+npm run medir
+```
+
+Gasta XTZ de torneira de rede de teste, e nada mais. A ferramenta recusa
+qualquer chave que não diga `"network": "shadownet"`.
+
+O que ela registra está copiado em
+`apps/tezzet/test/fixtures/bres-119-stake-medido.json` e é afirmado em
+`apps/tezzet/test/stake-medido.test.ts` — não como `stakedBalance ≤ pedido`,
+que a medição derrubou, mas como o que sobrevive a qualquer instante de
+leitura: o saldo nunca é o pedido, a diferença aparece nos dois sentidos, e
+quem ficou abaixo passa por cima em minutos.

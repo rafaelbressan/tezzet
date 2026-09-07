@@ -1,0 +1,61 @@
+{
+  "_": "BRES-119. Não é fixture escrita à mão: é o que a Shadownet registrou quando tools/shadownet-stake-probe assinou de verdade, em 2026-09-07. Todo hash abre em https://shadownet.tzkt.io. Refazer: veja o README da ferramenta.",
+  "rede": "shadownet",
+  "medidoEm": "2026-09-07T11:00:00Z",
+  "relidoEm": "2026-09-07T11:10:16Z",
+  "baker": "tz1X2jPbN1V6Yae7gf1NcbR4DgMKrouHrrrA",
+  "primeirosStakes": [
+    {
+      "conta": "tz1ZX9RvjeGi1RXCV2syu3vE7CiNfvhmuNPT",
+      "hash": "ooETy9MRM56AJqL9L98Jihg4FAEdySYS96i7L274YEsf2wsE1A9",
+      "nivel": 4961021,
+      "pedidoMutez": "50000000",
+      "lidoNoBlocoSeguinteMutez": "49999999",
+      "pseudotokens": "44523671"
+    },
+    {
+      "conta": "tz1T2rKnbmiaMWeQoncLmZLMUEpfaoSWQ9ia",
+      "hash": "opCdD2yQwxuyW7cCwCC6T1rce9kEmaQRE91DTNx7ACtQR31PgQ7",
+      "nivel": 4961058,
+      "pedidoMutez": "7000000",
+      "lidoNoBlocoSeguinteMutez": "6999999",
+      "pseudotokens": "6233305",
+      "relidoMutez": "7000026"
+    },
+    {
+      "conta": "tz1cttXMnXq2FF2whGr9zp6Ck6YuJhvnzt41",
+      "hash": "oovgBzBkQVQeWj6XDeRgeKZ2pSvR1hQbqrd4PFdvqxmWVZKTqpK",
+      "nivel": 4961068,
+      "pedidoMutez": "87654321",
+      "lidoNoBlocoSeguinteMutez": "87654320",
+      "pseudotokens": "78053700",
+      "relidoMutez": "87654623"
+    },
+    {
+      "conta": "tz1fGoHcDpZTd84XZVpy1GYYqdXyJYJdBJmU",
+      "hash": "ooK9uXw4tAguj5b2HTfV78H21A5xdr5735BS1i6EhB1C1V44Bxu",
+      "nivel": 4961153,
+      "pedidoMutez": "33333333",
+      "lidoNoBlocoSeguinteMutez": "33333339",
+      "pseudotokens": "29682326"
+    }
+  ],
+  "stakePorCimaDeStake": {
+    "conta": "tz1ZX9RvjeGi1RXCV2syu3vE7CiNfvhmuNPT",
+    "hash": "ooeU1MjerREGec6EurxgwYaQ4SPViUHZ4nB4pyLSvJcYbyLcFQd",
+    "nivel": 4961023,
+    "pedidoMutez": "1000000",
+    "emStakeAntesMutez": "49999999",
+    "emStakeDepoisMutez": "51000009"
+  },
+  "saidaDoStake": {
+    "conta": "tz1ZX9RvjeGi1RXCV2syu3vE7CiNfvhmuNPT",
+    "hash": "onkS6fzXefiFD8kAKtZtZigr3AFXRR7brZeP3dbCaBwSZGwNmYu",
+    "nivel": 4961025,
+    "emStakeAntesMutez": "51000009",
+    "saidaMutez": "20000000",
+    "prometidoPeloAppMutez": "31000009",
+    "lidoLogoDepoisMutez": "31000009",
+    "lidoApos90sMutez": "31000015"
+  }
+}

@@ -128,16 +128,23 @@ export interface StakePlan {
    * O que sai do gastável. Este número é exato: é o `amount` da operação.
    *
    * **Não é o que vai aparecer em stake.** O protocolo não guarda stake
-   * externo em mutez: guarda em pseudotokens, e a conversão mutez →
-   * pseudotoken arredonda para baixo. Medido na Shadownet em 2026-09-06, em
-   * dois primeiros stakes de duas contas: 50,000000 pedidos viraram 49,999999
-   * congelados (`oooDEQosxqr24D3tR9D1s7R6rSqYAHGadx9k8TmPjXawRCGwhFu`) e
-   * 90,000000 viraram 89,999999 (`onvznQ2e6993PgkmHcejpkqYVRg7XQ1rfzpHoDNYxbbB9ZrEwoc`).
-   * Um stake por cima de stake existente entrou exato — a perda é da primeira
-   * conversão.
+   * externo em mutez: guarda em pseudotokens. O crédito é
+   * `floor(pedido / taxa)` e o que se lê depois é
+   * `floor(pseudotokens × taxa_de_agora)`, com a taxa subindo a cada bloco.
+   *
+   * A diferença não tem sinal fixo, e é onde é fácil errar. Assinando na
+   * Shadownet, quatro contas novas: três leram 1 mutez a menos no bloco
+   * seguinte, uma leu 6 a mais; dez minutos depois, as de baixo já tinham
+   * passado por cima. Não dá para prometer o número, nem para escrever que
+   * ele fica abaixo.
    *
    * Por isso o plano não tem campo `stakedAfterMutez`: ele seria um número
-   * inventado, e a tela o mostraria como promessa.
+   * inventado, e a tela o mostraria como promessa. E por isso o app não
+   * compensa a diferença pedindo 1 mutez a mais — seria assinar um valor
+   * diferente do que a pessoa leu.
+   *
+   * A medição está em `tools/shadownet-stake-probe`, e o que ela registrou é
+   * afirmado em `test/stake-medido.test.ts`.
    */
   readonly amountMutez: bigint;
   readonly baker: string;
@@ -194,9 +201,9 @@ export interface UnstakePlan {
    *
    * É `stakedMutez − amountMutez`, uma subtração estática sobre um saldo que
    * a cadeia reavalia sozinha: o stake é guardado em pseudotokens e o valor
-   * em mutez sobe com o rendimento do baker e desce com punição. Medido na
-   * Shadownet em 2026-09-06: prometido 29,999999, lido 30,000004 logo depois
-   * e 30,000028 mais tarde — sem ninguém assinar nada no meio.
+   * em mutez sobe com o rendimento do baker e desce com punição. Medido
+   * assinando na Shadownet: prometido 31,000009, e a cadeia mostrando
+   * 31,000015 noventa segundos depois, sem ninguém assinar nada no meio.
    */
   readonly stakedAfterApproxMutez: bigint;
   readonly cost: OperationCost;

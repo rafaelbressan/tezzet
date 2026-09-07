@@ -63,6 +63,56 @@ describe('a onda sem custódia', () => {
     expect(todas.filter((name) => /stronghold|keychain|keyring/i.test(name))).toEqual([]);
   });
 
+  /**
+   * BRES-119 abriu uma porta: `tools/shadownet-stake-probe` assina de
+   * verdade, e para isso tem `@taquito/signer`. A porta fica do lado de fora
+   * do app — mas uma porta sem fechadura vira a próxima chave commitada.
+   *
+   * Estas três linhas são a fechadura: nada de material de chave no arquivo,
+   * nada de caminho apontando para dentro do repositório, e o segredo sempre
+   * vindo de variável de ambiente sem valor padrão.
+   */
+  const probe = resolve('..', '..', 'tools', 'shadownet-stake-probe');
+
+  it('a ferramenta que assina não guarda chave nenhuma no repositório', () => {
+    const arquivos = readdirSync(probe).filter((entry) => /\.(mjs|json|md)$/.test(entry));
+    expect(arquivos.length).toBeGreaterThan(0);
+
+    for (const entry of arquivos) {
+      const conteudo = readFileSync(join(probe, entry), 'utf8');
+      // `edsk`/`spsk`/`p2sk` seguidos de base58 é uma chave secreta de Tezos.
+      expect(conteudo, `${entry} tem o que parece uma chave secreta`).not.toMatch(
+        /\b(edsk|spsk|p2sk)[1-9A-HJ-NP-Za-km-z]{20,}/,
+      );
+      // Uma semente crua de 24 palavras seria o outro jeito de vazar.
+      expect(conteudo, `${entry} tem o que parece uma frase de recuperação`).not.toMatch(
+        /(\b[a-z]{3,8}\b[ ]){11}[a-z]{3,8}/,
+      );
+    }
+  });
+
+  it('a ferramenta lê a chave de fora, e não tem caminho padrão para dentro', () => {
+    const codigo = readdirSync(probe)
+      .filter((entry) => entry.endsWith('.mjs'))
+      .map((entry) => readFileSync(join(probe, entry), 'utf8'));
+    expect(codigo.length).toBeGreaterThan(0);
+
+    for (const conteudo of codigo) {
+      expect(conteudo).toContain('TEZZET_SHADOWNET_KEY');
+      // Segredo com valor padrão foi como o TAPS acabou com um JWT forjável.
+      expect(conteudo).not.toMatch(/TEZZET_SHADOWNET_KEY\s*(\?\?|\|\|)/);
+      // E nenhum caminho relativo que suba de volta para o repositório.
+      expect(conteudo).not.toMatch(/['"`]\.\.?\/[^'"`]*secrets/);
+    }
+  });
+
+  it('a ferramenta que assina não é dependência do app', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+    const todas = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
+
+    expect(todas.filter((name) => /shadownet-stake-probe/.test(name))).toEqual([]);
+  });
+
   it('o núcleo Rust não declara nenhuma dependência de criptografia', () => {
     // Sem os comentários: o Cargo.toml explica por que essas crates não estão
     // aqui, e explicar é justamente o que se quer que esteja escrito.
