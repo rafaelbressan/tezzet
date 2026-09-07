@@ -284,14 +284,23 @@ export function StakeScreen({ session, address }: { session: ChainSession; addre
                   onClick={() =>
                     void review(async () => {
                       const amountMutez = tezToMutez(unstakeAmount);
+                      // A espera é recontada aqui, e não reaproveitada de
+                      // `loadStaking`: uma tela aberta atravessando a virada
+                      // de ciclo (1 dia na Shadownet) prometeria um ciclo de
+                      // liberação já vencido. O número que vale é o do
+                      // instante em que se assina.
+                      const [cycleWindow, estimate] = await Promise.all([
+                        fetchCycleWindow(session.http),
+                        session.wallet.estimateUnstake(amountMutez, address),
+                      ]);
                       return {
                         action: 'unstake',
-                        wait,
+                        wait: computeUnstakeWait(cycleWindow, constants),
                         plan: planUnstake({
                           amountMutez,
                           stakedMutez: account.staked,
                           spendableMutez: account.spendable,
-                          estimate: await session.wallet.estimateUnstake(amountMutez, address),
+                          estimate,
                         }),
                       };
                     })
@@ -339,6 +348,49 @@ export function StakeScreen({ session, address }: { session: ChainSession; addre
 }
 
 /**
+ * O aviso que faltava: o número que a tela promete não é o que a cadeia
+ * congela.
+ *
+ * O protocolo não guarda stake externo em mutez — guarda em **pseudotokens**,
+ * e converte nos dois sentidos. A ida arredonda para baixo, e a volta é
+ * reavaliada a cada ciclo com o rendimento do baker. Duas consequências que
+ * quem assina precisa ler antes de assinar, medidas na Shadownet em
+ * 2026-09-06:
+ *
+ *  - **stake:** 50,000000 pedidos viraram 49,999999 congelados, e 90,000000
+ *    viraram 89,999999. Só no primeiro stake da conta; por cima de stake
+ *    existente entrou exato.
+ *  - **unstake:** "continua em stake" prometeu 29,999999 e a cadeia mostrou
+ *    30,000004 minutos depois, 30,000028 mais tarde. Ninguém assinou nada no
+ *    meio.
+ *
+ * São centavos de mutez. O que não é centavo é a tela afirmar um valor exato
+ * que ela não pode garantir: quem stakeia 50 e depois lê 49,999999 não tem
+ * como saber se perdeu alguma coisa.
+ */
+function PseudotokenNotice({ what }: { what: 'stake' | 'unstake' }) {
+  return (
+    <p className="note" role="note">
+      {what === 'stake' ? (
+        <>
+          O valor acima é o que <strong>sai do gastável</strong>, e esse número é exato. O que
+          aparece <strong>em stake</strong> é convertido pelo protocolo e pode ficar alguns mutez
+          abaixo do pedido — na primeira vez que a conta stakeia, foi 1 mutez nas duas medições.
+        </>
+      ) : (
+        <>
+          <strong>&quot;Continua em stake&quot; é uma conta aproximada.</strong> O protocolo guarda
+          o stake convertido e reavalia o valor sozinho: ele sobe com o rendimento do baker e desce
+          com punição, sem ninguém assinar nada.
+        </>
+      )}{' '}
+      O valor em stake muda sozinho com o tempo; confira sempre o que a cadeia mostra, não o que
+      foi pedido.
+    </p>
+  );
+}
+
+/**
  * A espera, escrita antes de a pessoa apertar qualquer coisa.
  *
  * Em ciclos **e** em dias **e** com a data: quem tem XTZ raciocina em ciclo,
@@ -355,8 +407,10 @@ function WaitNotice({ wait, constants }: { wait: UnstakeWait; constants: Staking
       </strong>{' '}
       São {wait.blocksToWait.toLocaleString('pt-BR')} blocos, contados no tempo mínimo de{' '}
       {constants.minimalBlockDelay} s por bloco; qualquer rodada perdida faz demorar mais, nunca
-      menos. Passada a espera, o valor <strong>não volta sozinho</strong>: ele fica finalizável e
-      precisa de mais uma operação, que você assina aqui.
+      menos. O ciclo é reconferido na revisão, logo antes de assinar — se esta tela ficar aberta
+      atravessando a virada de ciclo, vale o número de lá. Passada a espera, o valor{' '}
+      <strong>não volta sozinho</strong>: ele fica finalizável e precisa de mais uma operação, que
+      você assina aqui.
     </p>
   );
 }
@@ -463,7 +517,7 @@ function Review({ pending }: { pending: PendingPlan }) {
         {pending.action === 'stake' && (
           <>
             <p className="receipt__line">
-              <span>Congelar em stake</span>
+              <span>Sai do gastável</span>
               <Amount mutez={pending.plan.amountMutez} />
             </p>
             <p className="receipt__line">
@@ -479,8 +533,8 @@ function Review({ pending }: { pending: PendingPlan }) {
               <Amount mutez={pending.plan.amountMutez} />
             </p>
             <p className="receipt__line">
-              <span>Continua em stake</span>
-              <Amount mutez={pending.plan.stakedAfterMutez} />
+              <span>Continua em stake, aproximado</span>
+              <Amount mutez={pending.plan.stakedAfterApproxMutez} />
             </p>
           </>
         )}
@@ -492,12 +546,17 @@ function Review({ pending }: { pending: PendingPlan }) {
         )}
       </OperationReceipt>
 
+      {pending.action === 'stake' && <PseudotokenNotice what="stake" />}
+
       {pending.action === 'unstake' && (
-        <p className="note note--strong">
-          Confirmando, este valor fica preso até o ciclo {pending.wait.unlockCycle}, a partir de{' '}
-          {formatTimestamp(pending.wait.earliestAt)} — e depois ainda precisa da operação de
-          finalizar. Não há como cancelar no meio.
-        </p>
+        <>
+          <PseudotokenNotice what="unstake" />
+          <p className="note note--strong">
+            Confirmando, este valor fica preso até o ciclo {pending.wait.unlockCycle}, a partir de{' '}
+            {formatTimestamp(pending.wait.earliestAt)} — e depois ainda precisa da operação de
+            finalizar. Não há como cancelar no meio.
+          </p>
+        </>
       )}
     </>
   );

@@ -145,10 +145,46 @@ describe('planStake', () => {
       ).toThrow(StakingValidationError);
     }
   });
+
+  // BRES-119. Na Shadownet, 50,000000 pedidos congelaram 49,999999, e
+  // 90,000000 congelaram 89,999999: o protocolo converte mutez em
+  // pseudotokens e arredonda para baixo na primeira conversão da conta. O que
+  // o app sabe exatamente é o que sai do gastável. Um campo com o saldo em
+  // stake depois seria inventado, e a tela o mostraria como promessa — então
+  // o plano não tem esse campo, e este teste é o que impede de voltar.
+  it('não promete saldo em stake depois: a cadeia converte e arredonda para baixo', () => {
+    const plan = planStake({
+      amountMutez: 50_000_000n,
+      spendableMutez: 60_000_000n,
+      currentDelegate: BAKER,
+      estimate: TAXA,
+    });
+
+    expect(Object.keys(plan)).not.toContain('stakedAfterMutez');
+    expect(Object.keys(plan)).not.toContain('stakedAfterApproxMutez');
+    // O que sobra é exato porque é subtração do gastável, não conversão.
+    expect(plan.amountMutez).toBe(50_000_000n);
+    expect(plan.spendableAfterMutez).toBe(60_000_000n - 50_000_000n - 500n);
+  });
+
+  // O bug de verdade seria alguém "corrigir" a diferença de 1 mutez somando
+  // ou subtraindo no app. O plano pede o que a pessoa digitou, exatamente: o
+  // arredondamento é do protocolo e conferir contra a cadeia é o único jeito
+  // de saber quanto foi.
+  it('pede o valor digitado, sem compensar o arredondamento do protocolo', () => {
+    const plan = planStake({
+      amountMutez: 90_000_000n,
+      spendableMutez: 100_000_000n,
+      currentDelegate: BAKER,
+      estimate: TAXA,
+    });
+
+    expect(plan.amountMutez).toBe(90_000_000n);
+  });
 });
 
 describe('planUnstake', () => {
-  it('tira do stake e diz quanto continua congelado', () => {
+  it('tira do stake e estima quanto continua congelado', () => {
     const plan = planUnstake({
       amountMutez: 400_000n,
       stakedMutez: 1_000_000n,
@@ -156,7 +192,25 @@ describe('planUnstake', () => {
       estimate: TAXA,
     });
 
-    expect(plan.stakedAfterMutez).toBe(600_000n);
+    expect(plan.stakedAfterApproxMutez).toBe(600_000n);
+  });
+
+  // BRES-119. O campo se chamava `stakedAfterMutez` e a tela o mostrava como
+  // um número exato. Ele nunca foi exato: o protocolo guarda o stake em
+  // pseudotokens e reavalia o valor em mutez sozinho — na Shadownet, 29,999999
+  // prometidos viraram 30,000004 minutos depois e 30,000028 mais tarde. O
+  // nome é o teste: quem for usar o número tem que ler "approx" para chegar
+  // nele.
+  it('o que continua em stake é aproximado, e o nome do campo diz isso', () => {
+    const plan = planUnstake({
+      amountMutez: 400_000n,
+      stakedMutez: 1_000_000n,
+      spendableMutez: 10_000n,
+      estimate: TAXA,
+    });
+
+    expect(Object.keys(plan)).toContain('stakedAfterApproxMutez');
+    expect(Object.keys(plan)).not.toContain('stakedAfterMutez');
   });
 
   it('recusa tirar mais do que está em stake', () => {

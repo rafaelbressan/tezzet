@@ -124,10 +124,25 @@ export interface StakeRequest {
 }
 
 export interface StakePlan {
+  /**
+   * O que sai do gastável. Este número é exato: é o `amount` da operação.
+   *
+   * **Não é o que vai aparecer em stake.** O protocolo não guarda stake
+   * externo em mutez: guarda em pseudotokens, e a conversão mutez →
+   * pseudotoken arredonda para baixo. Medido na Shadownet em 2026-09-06, em
+   * dois primeiros stakes de duas contas: 50,000000 pedidos viraram 49,999999
+   * congelados (`oooDEQosxqr24D3tR9D1s7R6rSqYAHGadx9k8TmPjXawRCGwhFu`) e
+   * 90,000000 viraram 89,999999 (`onvznQ2e6993PgkmHcejpkqYVRg7XQ1rfzpHoDNYxbbB9ZrEwoc`).
+   * Um stake por cima de stake existente entrou exato — a perda é da primeira
+   * conversão.
+   *
+   * Por isso o plano não tem campo `stakedAfterMutez`: ele seria um número
+   * inventado, e a tela o mostraria como promessa.
+   */
   readonly amountMutez: bigint;
   readonly baker: string;
   readonly cost: OperationCost;
-  /** Gastável depois de congelar o valor **e** pagar a taxa. */
+  /** Gastável depois de congelar o valor **e** pagar a taxa. Exato. */
   readonly spendableAfterMutez: bigint;
 }
 
@@ -171,8 +186,19 @@ export interface UnstakeRequestPlanInput {
 }
 
 export interface UnstakePlan {
+  /** O que este pedido tira do stake. Exato: é o `amount` da operação. */
   readonly amountMutez: bigint;
-  readonly stakedAfterMutez: bigint;
+  /**
+   * O que deve continuar em stake — **aproximado**, e o nome diz isso porque
+   * a tela precisa dizer isso.
+   *
+   * É `stakedMutez − amountMutez`, uma subtração estática sobre um saldo que
+   * a cadeia reavalia sozinha: o stake é guardado em pseudotokens e o valor
+   * em mutez sobe com o rendimento do baker e desce com punição. Medido na
+   * Shadownet em 2026-09-06: prometido 29,999999, lido 30,000004 logo depois
+   * e 30,000028 mais tarde — sem ninguém assinar nada no meio.
+   */
+  readonly stakedAfterApproxMutez: bigint;
   readonly cost: OperationCost;
 }
 
@@ -191,7 +217,7 @@ export function planUnstake(request: UnstakeRequestPlanInput): UnstakePlan {
 
   return {
     amountMutez: request.amountMutez,
-    stakedAfterMutez: request.stakedMutez - request.amountMutez,
+    stakedAfterApproxMutez: request.stakedMutez - request.amountMutez,
     // A taxa sai do gastável, não do stake: sem gastável não dá para sair do
     // stake, e descobrir isso depois de assinar é o pior momento.
     cost: costOf(request.estimate, request.spendableMutez, 'a saída do stake'),
