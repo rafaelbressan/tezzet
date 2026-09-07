@@ -52,6 +52,12 @@ export const NO_COST: TransferEstimate = {
 export interface FakeWallet extends WalletPort {
   /** O que a tela pediu para a carteira assinar, na ordem. */
   readonly signed: string[];
+  /**
+   * O que a tela mandou estimar, na ordem. Estimar é uma ida ao nó, e há
+   * recusas que o app conhece antes dela (BRES-116) — uma lista vazia aqui é
+   * a prova de que a conferência aconteceu antes da rede.
+   */
+  readonly estimated: string[];
 }
 
 /**
@@ -60,32 +66,49 @@ export interface FakeWallet extends WalletPort {
  */
 export function fakeWallet(estimate: TransferEstimate = NO_COST): FakeWallet {
   const signed: string[] = [];
+  const estimated: string[] = [];
   return {
     signed,
+    estimated,
     connect: async () => 'tz1TfBtHD87eRJnSn4vvnsE1JGzKvpoKLJMj',
     disconnect: async () => undefined,
     activeAddress: async () => 'tz1TfBtHD87eRJnSn4vvnsE1JGzKvpoKLJMj',
-    estimateTransfer: async () => estimate,
+    estimateTransfer: async (destination) => {
+      estimated.push(`transfer:${destination}`);
+      return estimate;
+    },
     sendTransfer: async (destination) => {
       signed.push(`transfer:${destination}`);
       return 'ooTransfer';
     },
-    estimateSetDelegate: async () => estimate,
+    estimateSetDelegate: async (baker) => {
+      estimated.push(`setDelegate:${baker ?? 'none'}`);
+      return estimate;
+    },
     sendSetDelegate: async (baker) => {
       signed.push(`setDelegate:${baker ?? 'none'}`);
       return 'ooDelegate';
     },
-    estimateStake: async () => estimate,
+    estimateStake: async (amountMutez) => {
+      estimated.push(`stake:${amountMutez}`);
+      return estimate;
+    },
     sendStake: async (amountMutez) => {
       signed.push(`stake:${amountMutez}`);
       return 'ooStake';
     },
-    estimateUnstake: async () => estimate,
+    estimateUnstake: async (amountMutez) => {
+      estimated.push(`unstake:${amountMutez}`);
+      return estimate;
+    },
     sendUnstake: async (amountMutez) => {
       signed.push(`unstake:${amountMutez}`);
       return 'ooUnstake';
     },
-    estimateFinalizeUnstake: async () => estimate,
+    estimateFinalizeUnstake: async () => {
+      estimated.push('finalizeUnstake');
+      return estimate;
+    },
     sendFinalizeUnstake: async () => {
       signed.push('finalizeUnstake');
       return 'ooFinalize';

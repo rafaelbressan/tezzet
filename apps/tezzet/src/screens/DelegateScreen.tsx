@@ -13,7 +13,12 @@ import { fetchCycleWindow } from '../chain/unstake';
 import { describeFault } from '../lib/faults';
 import type { ChainSession } from '../state/session';
 import { useAsync } from '../state/useAsync';
-import { planDelegation, StakingValidationError, type DelegationPlan } from '../wallet/staking';
+import {
+  checkDelegation,
+  planDelegation,
+  StakingValidationError,
+  type DelegationPlan,
+} from '../wallet/staking';
 import { BakerCard } from '../ui/baker-card';
 import { DelegateVersusStake } from '../ui/difference';
 import { OperationReceipt, SentOperation } from '../ui/operation';
@@ -73,12 +78,17 @@ export function DelegateScreen({ session, address }: { session: ChainSession; ad
       setError(null);
       setStage({ kind: 'reviewing' });
       try {
+        const currentDelegate = snapshot.delegate?.address ?? null;
+        // Antes de estimar, não depois: a estimativa fala com o nó e o nó
+        // recusa primeiro, com o id cru do protocolo. A frase em português já
+        // existe — o que faltava era chegar nela antes da rede.
+        checkDelegation({ baker, currentDelegate });
         const estimate = await session.wallet.estimateSetDelegate(baker, address);
         setStage({
           kind: 'review',
           plan: planDelegation({
             baker,
-            currentDelegate: snapshot.delegate?.address ?? null,
+            currentDelegate,
             spendableMutez: snapshot.spendable,
             estimate,
           }),
@@ -228,20 +238,28 @@ export function DelegateScreen({ session, address }: { session: ChainSession; ad
                 network={session.network}
                 focus="delegating"
               />
-              <div className="form__actions">
-                <button
-                  className="t-button"
-                  type="button"
-                  disabled={stage.kind === 'reviewing' || stage.kind === 'signing'}
-                  onClick={() => void review(shown.baker.address, current)}
-                >
-                  {stage.kind === 'reviewing'
-                    ? 'Estimando na rede…'
-                    : current.delegate
-                      ? 'Trocar para este baker'
-                      : 'Delegar para este baker'}
-                </button>
-              </div>
+              {current.delegate?.address === shown.baker.address ? (
+                <p className="note note--strong">
+                  <strong>Este já é o baker desta conta.</strong> Não há o que trocar: assinar de
+                  novo pagaria a taxa e deixaria tudo como está. Para trocar, informe o endereço de
+                  outro baker acima.
+                </p>
+              ) : (
+                <div className="form__actions">
+                  <button
+                    className="t-button"
+                    type="button"
+                    disabled={stage.kind === 'reviewing' || stage.kind === 'signing'}
+                    onClick={() => void review(shown.baker.address, current)}
+                  >
+                    {stage.kind === 'reviewing'
+                      ? 'Estimando na rede…'
+                      : current.delegate
+                        ? 'Trocar para este baker'
+                        : 'Delegar para este baker'}
+                  </button>
+                </div>
+              )}
             </>
           )}
 
