@@ -18,6 +18,7 @@ import { formatTimestamp } from '../lib/format';
 import type { ChainSession } from '../state/session';
 import { useAsync } from '../state/useAsync';
 import {
+  checkStake,
   planFinalize,
   planStake,
   planUnstake,
@@ -215,7 +216,14 @@ export function StakeScreen({ session, address }: { session: ChainSession; addre
             busy={stage.kind === 'reviewing' || stage.kind === 'signing'}
           />
 
-          {delegate !== null && (
+          {delegate !== null && baker !== null && baker.stakingLimitMillionth === 0n && (
+            <EmptyState
+              title="Este baker não aceita stake de terceiros"
+              next="O limite dele é zero e a cadeia recusaria a operação. Delegar para ele continua valendo; para stakear, troque de baker na aba Delegar."
+            />
+          )}
+
+          {delegate !== null && baker !== null && baker.stakingLimitMillionth > 0n && (
             <div className="form">
               <label className="t-field">
                 <span className="t-field__label">Congelar em stake, em XTZ</span>
@@ -239,12 +247,19 @@ export function StakeScreen({ session, address }: { session: ChainSession; addre
                   onClick={() =>
                     void review(async () => {
                       const amountMutez = tezToMutez(stakeAmount);
+                      const check = {
+                        amountMutez,
+                        currentDelegate: delegate,
+                        bakerStakingLimitMillionth: baker.stakingLimitMillionth,
+                      };
+                      // Antes da estimativa: o que a tela já sabe recusar não
+                      // vai para o nó voltar como id de protocolo.
+                      checkStake(check);
                       return {
                         action: 'stake',
                         plan: planStake({
-                          amountMutez,
+                          ...check,
                           spendableMutez: account.spendable,
-                          currentDelegate: delegate,
                           estimate: await session.wallet.estimateStake(amountMutez, address),
                         }),
                       };

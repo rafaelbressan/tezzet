@@ -23,9 +23,78 @@ export interface FaultDescription {
   readonly cost: string;
 }
 
+/**
+ * Recusas da cadeia que o app sabe explicar, pelo id do protocolo **sem o
+ * prefixo de versão**: `proto.025-PsUshuai.delegate.unchanged` entra aqui como
+ * `delegate.unchanged`. O prefixo muda a cada protocolo e a condição não.
+ *
+ * Esta tabela é rede de segurança, não a defesa principal. As duas condições
+ * abaixo são conferidas antes de estimar (`checkDelegation`, `checkStake`), e
+ * chegar aqui significa que o estado mudou entre a leitura e a assinatura —
+ * o baker fechou o stake, ou a conta delegou por outra carteira no meio.
+ *
+ * Só entra id observado na cadeia. Traduzir de memória produz frase confiante
+ * e errada, que é pior que o id cru.
+ */
+const PROTOCOL_FAULTS: Record<string, { readonly what: string; readonly next: string }> = {
+  'delegate.unchanged': {
+    what: 'Esta conta já delega para este baker.',
+    next: 'Para trocar, informe outro endereço; para continuar com este, não há nada a assinar.',
+  },
+  'operations.staking_to_delegate_that_refuses_external_staking': {
+    what: 'Este baker não aceita stake de terceiros: o limite dele é zero.',
+    next: 'Delegar para ele continua valendo; para stakear é preciso trocar de baker.',
+  },
+  'delegate.not_registered': {
+    what: 'Este endereço não está registrado como baker nesta rede.',
+    next: 'Confira o endereço e a rede escolhida.',
+  },
+};
+
+/**
+ * O id do protocolo dentro de uma rejeição do Taquito.
+ *
+ * `instanceof TezosOperationError` não serve: duas cópias do pacote na árvore
+ * — o que acontece com `@taquito/beacon-wallet` puxando a sua — dariam
+ * `false` para um erro que é exatamente aquele. O que se procura é a forma:
+ * um `errors` que é lista e traz ids no formato `proto.<versão>.<condição>`.
+ */
+function protocolFaultId(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const errors = (error as { errors?: unknown }).errors;
+  if (!Array.isArray(errors)) return undefined;
+
+  const ids = errors.flatMap((item) => {
+    if (typeof item !== 'object' || item === null) return [];
+    const id = (item as { id?: unknown }).id;
+    return typeof id === 'string' && /^proto\.[^.]+\..+/.test(id) ? [id] : [];
+  });
+
+  // O último é o que o Taquito escolhe para a mensagem, e é o mais específico
+  // da pilha. Mas se algum id da pilha tem tradução, ela ganha: a frase em
+  // português vale mais que a posição na lista.
+  return ids.find((id) => shortProtocolId(id) in PROTOCOL_FAULTS) ?? ids[ids.length - 1];
+}
+
+function shortProtocolId(id: string): string {
+  return id.replace(/^proto\.[^.]+\./, '');
+}
+
 export function describeFault(error: unknown, cost: string, attempts = 1): FaultDescription {
   const tries = attempts > 1 ? ` · ${attempts} tentativas` : '';
 
+  const protocolId = protocolFaultId(error);
+  if (protocolId !== undefined) {
+    const known = PROTOCOL_FAULTS[shortProtocolId(protocolId)];
+    if (known) {
+      return { what: known.what, where: `${protocolId}${tries}`, cost: `${cost} ${known.next}` };
+    }
+    return {
+      what: 'A cadeia recusou a operação, e o Tezzet não sabe traduzir este motivo.',
+      where: `${protocolId}${tries}`,
+      cost: `${cost} O identificador ao lado é do protocolo e serve para relatar o defeito.`,
+    };
+  }
   if (error instanceof RateLimitedError) {
     return {
       what: 'O indexador recusou por excesso de chamadas (HTTP 429).',

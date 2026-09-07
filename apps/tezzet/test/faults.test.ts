@@ -78,3 +78,82 @@ describe('describeFault', () => {
     expect(fault.where).toBe('api.shadownet.tzkt.io');
   });
 });
+
+/**
+ * BRES-116: o painel de falha mostrou `(temporary)
+ * proto.025-PsUshuai.delegate.unchanged` — o id cru do protocolo — para quem
+ * tentou redelegar para o baker atual na Shadownet. As cargas abaixo são as
+ * que o Taquito rejeita, com o `errors` do nó dentro.
+ */
+describe('recusa da cadeia', () => {
+  const recusa = (id: string) => ({
+    name: 'TezosOperationError',
+    message: `(temporary) ${id}`,
+    errors: [{ kind: 'temporary', id }],
+  });
+
+  it('delegar para o baker atual vira frase, e o id fica na linha de origem', () => {
+    const fault = describeFault(
+      recusa('proto.025-PsUshuai.delegate.unchanged'),
+      'Nada foi assinado.',
+    );
+
+    expect(fault.what).toBe('Esta conta já delega para este baker.');
+    expect(fault.what).not.toContain('proto.');
+    expect(fault.where).toBe('proto.025-PsUshuai.delegate.unchanged');
+    expect(fault.cost).toContain('Nada foi assinado.');
+  });
+
+  it('baker que não aceita stake de terceiros diz o que fazer', () => {
+    const fault = describeFault(
+      recusa('proto.025-PsUshuai.operations.staking_to_delegate_that_refuses_external_staking'),
+      'Nada foi assinado.',
+    );
+
+    expect(fault.what).toContain('não aceita stake de terceiros');
+    expect(fault.cost).toContain('trocar de baker');
+  });
+
+  it('a tradução não depende da versão do protocolo no id', () => {
+    // O prefixo muda a cada protocolo; a condição não. Uma tabela que casasse
+    // o id inteiro pararia de traduzir no próximo upgrade, calada.
+    const fault = describeFault(recusa('proto.099-PsFuturo.delegate.unchanged'), 'Nada foi assinado.');
+
+    expect(fault.what).toBe('Esta conta já delega para este baker.');
+  });
+
+  it('id sem tradução assume que não tem, em vez de despejar o id como frase', () => {
+    const fault = describeFault(
+      recusa('proto.025-PsUshuai.contract.balance_too_low'),
+      'Nada foi assinado.',
+    );
+
+    expect(fault.what).toContain('não sabe traduzir');
+    expect(fault.what).not.toContain('proto.');
+    expect(fault.where).toBe('proto.025-PsUshuai.contract.balance_too_low');
+  });
+
+  it('escolhe o id que sabe traduzir, não a posição na pilha', () => {
+    const fault = describeFault(
+      {
+        name: 'TezosOperationError',
+        errors: [
+          { kind: 'temporary', id: 'proto.025-PsUshuai.delegate.unchanged' },
+          { kind: 'temporary', id: 'proto.025-PsUshuai.michelson_v1.runtime_error' },
+        ],
+      },
+      'Nada foi assinado.',
+    );
+
+    expect(fault.what).toBe('Esta conta já delega para este baker.');
+  });
+
+  it('um objeto qualquer com "errors" não é confundido com recusa de protocolo', () => {
+    const fault = describeFault(
+      { message: 'A carteira recusou', errors: [{ id: 'ABORTED' }] },
+      'Nada foi assinado.',
+    );
+
+    expect(fault.what).toBe('A carteira recusou');
+  });
+});

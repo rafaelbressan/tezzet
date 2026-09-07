@@ -59,23 +59,34 @@ function costOf(estimate: TransferEstimate, spendableMutez: bigint, what: string
   };
 }
 
-export interface DelegationRequest {
+/**
+ * O que decide se a delegação pode acontecer — **sem nenhum número de custo**.
+ *
+ * Esta parte está separada porque ela é conferível antes de falar com a rede,
+ * e o custo não é. Estimar primeiro entrega a recusa para a cadeia, que
+ * responde com o id cru do protocolo em vez da frase que já está escrita
+ * aqui embaixo.
+ */
+export interface DelegationCheck {
   /** Para quem passar a delegar. `null` = parar de delegar. */
   readonly baker: string | null;
   /** Para quem a conta delega hoje, lido da cadeia. `null` = não delega. */
   readonly currentDelegate: string | null;
+}
+
+export interface DelegationRequest extends DelegationCheck {
   readonly spendableMutez: bigint;
   readonly estimate: TransferEstimate;
 }
 
-export interface DelegationPlan {
-  readonly kind: 'delegate' | 'undelegate';
-  readonly baker: string | null;
-  readonly previousDelegate: string | null;
-  readonly cost: OperationCost;
-}
-
-export function planDelegation(request: DelegationRequest): DelegationPlan {
+/**
+ * Tudo que reprova uma delegação sem custar uma chamada de rede.
+ *
+ * Chame **antes** de estimar. `planDelegation` chama de novo, porque a
+ * garantia é do domínio e não da ordem em que uma tela resolveu fazer as
+ * coisas.
+ */
+export function checkDelegation(request: DelegationCheck): void {
   if (request.baker === null) {
     if (request.currentDelegate === null) {
       throw new StakingValidationError(
@@ -83,12 +94,7 @@ export function planDelegation(request: DelegationRequest): DelegationPlan {
           'só gastaria a taxa',
       );
     }
-    return {
-      kind: 'undelegate',
-      baker: null,
-      previousDelegate: request.currentDelegate,
-      cost: costOf(request.estimate, request.spendableMutez, 'parar de delegar'),
-    };
+    return;
   }
 
   assertPayableAddress(request.baker);
@@ -103,6 +109,26 @@ export function planDelegation(request: DelegationRequest): DelegationPlan {
       'esta conta já delega para este baker; assinar de novo só gastaria a taxa',
     );
   }
+}
+
+export interface DelegationPlan {
+  readonly kind: 'delegate' | 'undelegate';
+  readonly baker: string | null;
+  readonly previousDelegate: string | null;
+  readonly cost: OperationCost;
+}
+
+export function planDelegation(request: DelegationRequest): DelegationPlan {
+  checkDelegation(request);
+
+  if (request.baker === null) {
+    return {
+      kind: 'undelegate',
+      baker: null,
+      previousDelegate: request.currentDelegate,
+      cost: costOf(request.estimate, request.spendableMutez, 'parar de delegar'),
+    };
+  }
 
   return {
     kind: 'delegate',
@@ -112,15 +138,60 @@ export function planDelegation(request: DelegationRequest): DelegationPlan {
   };
 }
 
-export interface StakeRequest {
+/** A mesma separação da delegação: o que reprova sem custo, longe do custo. */
+export interface StakeCheck {
   readonly amountMutez: bigint;
-  readonly spendableMutez: bigint;
   /**
    * Para quem a conta delega. O protocolo só aceita stake para o próprio
    * baker: sem delegação não há para quem stakear, e a operação é recusada.
    */
   readonly currentDelegate: string | null;
+  /**
+   * `limit_of_staking_over_baking_millionth` do baker: quanto stake de
+   * terceiros ele aceita, em milionésimos do stake próprio dele. **Zero
+   * significa que ele não aceita nenhum**, e a cadeia recusa a operação com
+   * `staking_to_delegate_that_refuses_external_staking`.
+   *
+   * Não confundir com o espaço livre de stake: quando o limite é maior que
+   * zero e o espaço acabou, a cadeia **aceita** e conta o excedente como
+   * delegação — rende menos, mas não é recusa, e por isso é aviso e não
+   * bloqueio.
+   */
+  readonly bakerStakingLimitMillionth: bigint;
+}
+
+export interface StakeRequest extends StakeCheck {
+  readonly spendableMutez: bigint;
   readonly estimate: TransferEstimate;
+}
+
+/**
+ * Tudo que reprova um stake sem custar uma chamada de rede.
+ *
+ * Devolve a garantia no tipo (`asserts`) para que quem chamar não precise
+ * conferir de novo o delegado só para convencer o compilador.
+ */
+export function checkStake(
+  request: StakeCheck,
+): asserts request is StakeCheck & { readonly currentDelegate: string } {
+  if (request.currentDelegate === null) {
+    throw new StakingValidationError(
+      'esta conta não delega para nenhum baker, e só dá para stakear com o próprio ' +
+        'baker — delegue primeiro, e stakeie depois',
+    );
+  }
+  if (request.bakerStakingLimitMillionth === 0n) {
+    throw new StakingValidationError(
+      'este baker não aceita stake de terceiros: o limite dele é zero, e a cadeia ' +
+        'recusaria a operação — delegar para ele continua valendo, mas para stakear ' +
+        'é preciso trocar de baker',
+    );
+  }
+  if (request.amountMutez <= 0n) {
+    throw new StakingValidationError(
+      `o valor precisa ser maior que zero (veio ${request.amountMutez} mutez)`,
+    );
+  }
 }
 
 export interface StakePlan {
@@ -132,17 +203,7 @@ export interface StakePlan {
 }
 
 export function planStake(request: StakeRequest): StakePlan {
-  if (request.currentDelegate === null) {
-    throw new StakingValidationError(
-      'esta conta não delega para nenhum baker, e só dá para stakear com o próprio ' +
-        'baker — delegue primeiro, e stakeie depois',
-    );
-  }
-  if (request.amountMutez <= 0n) {
-    throw new StakingValidationError(
-      `o valor precisa ser maior que zero (veio ${request.amountMutez} mutez)`,
-    );
-  }
+  checkStake(request);
 
   const cost = costOf(request.estimate, request.spendableMutez, 'o stake');
   const totalMutez = request.amountMutez + cost.totalMutez;
