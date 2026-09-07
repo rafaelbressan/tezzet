@@ -115,10 +115,32 @@ já reprova sozinho — o `index.html` desta pasta passa nos três.
 
 ## Idioma
 
-Esta página e os documentos estão em português, o idioma do time. Os **nomes dos
-tokens estão em inglês** de propósito, para que o código não precise de tradução
-quando a suíte for publicada para a comunidade Tezos. Uma versão em inglês do
-`index.html` e do `NARRATIVE.md` é pré-requisito para tornar o repositório público.
+**Diretriz de Rafael, 07/09/2026, válida para Tezzet e TAPS:**
+
+> Tudo localizável. O português é o idioma padrão por enquanto; o inglês é
+> **tradução obrigatória sempre que algo novo for criado.**
+
+O que isso obriga, na prática:
+
+1. **Nada de texto cravado no código.** Toda frase que uma pessoa lê sai de um
+   catálogo de mensagens, com chave. Uma tela que não dá para traduzir sem editar
+   o código não está pronta — está presa a um idioma.
+2. **Coisa nova nasce nos dois idiomas.** Documento, tela, mensagem de erro e texto
+   vazio entram em português **e** inglês no mesmo PR. Não existe "traduzo depois":
+   depois é quando a divergência já custou caro.
+3. **Os nomes dos tokens continuam em inglês**, e por isso não são traduzidos —
+   `--c-gold` é a chave, não a mensagem. Vale igual para nomes de primitiva `.t-*`,
+   de commit e de branch.
+4. **O vocabulário fixo tem uma palavra por conceito em cada idioma.** A tabela de
+   [`NARRATIVE.md`](NARRATIVE.md) ganha a coluna em inglês, e ela vale nos dois
+   produtos. Sem isso cada tradução inventa a própria palavra para *delegador*.
+
+**O que ainda está em português e precisa da versão em inglês:** `index.html`,
+`NARRATIVE.md`, `JOURNEY.md` e este arquivo. É pré-requisito para tornar os
+repositórios públicos, e é trabalho pendente, não decisão em aberto.
+
+Documentação interna de engenharia — specs, ADRs e runbooks — segue em português.
+A regra acima é sobre o que sai para fora, não sobre a conversa do time.
 
 ## Versão
 
