@@ -115,17 +115,56 @@ já reprova sozinho — o `index.html` desta pasta passa nos três.
 
 ## Idioma
 
-Esta página e os documentos estão em português, o idioma do time. Os **nomes dos
-tokens estão em inglês** de propósito, para que o código não precise de tradução
-quando a suíte for publicada para a comunidade Tezos. Uma versão em inglês do
-`index.html` e do `NARRATIVE.md` é pré-requisito para tornar o repositório público.
+**Diretriz de Rafael, 07/09/2026, válida para Tezzet e TAPS:**
+
+> Tudo localizável. O português é o idioma padrão por enquanto; o inglês é
+> **tradução obrigatória sempre que algo novo for criado.**
+
+O que isso obriga, na prática:
+
+1. **Nada de texto cravado no código.** Toda frase que uma pessoa lê sai de um
+   catálogo de mensagens, com chave. Uma tela que não dá para traduzir sem editar
+   o código não está pronta — está presa a um idioma.
+2. **Coisa nova nasce nos dois idiomas.** Documento, tela, mensagem de erro e texto
+   vazio entram em português **e** inglês no mesmo PR. Não existe "traduzo depois":
+   depois é quando a divergência já custou caro.
+3. **Os nomes dos tokens continuam em inglês**, e por isso não são traduzidos —
+   `--c-gold` é a chave, não a mensagem. Vale igual para nomes de primitiva `.t-*`,
+   de commit e de branch.
+4. **O vocabulário fixo tem uma palavra por conceito em cada idioma.** A tabela de
+   [`NARRATIVE.md`](NARRATIVE.md) ganha a coluna em inglês, e ela vale nos dois
+   produtos. Sem isso cada tradução inventa a própria palavra para *delegador*.
+
+**O que ainda está em português e precisa da versão em inglês:** `index.html`,
+`NARRATIVE.md`, `JOURNEY.md` e este arquivo. É pré-requisito para tornar os
+repositórios públicos, e é trabalho pendente, não decisão em aberto.
+
+Documentação interna de engenharia — specs, ADRs e runbooks — segue em português.
+A regra acima é sobre o que sai para fora, não sobre a conversa do time.
 
 ## Versão
 
-`1.1.0` — declarada em `tokens/tokens.json` (`$version`). Mudança ou acréscimo de valor
+`1.2.0` — declarada em `tokens/tokens.json` (`$version`). Mudança ou acréscimo de valor
 de token é *minor*; **remoção ou renomeação de token ou de primitiva `.t-*` é *major***.
 A regra passa a cobrir as primitivas explicitamente: elas são o contrato de consumo tanto
 quanto os tokens são.
+
+### O que mudou em 1.2.0
+
+- **Acrescentada** a decisão da passagem em `tokens.json` → `crossing`: o teste de aceite
+  (*toda passagem de dado responde "isso está certo?"*) e os três caminhos com a escolha —
+  cadeia como degrau 0, arquivo assinado como degrau 1, descoberta recusada como passagem.
+  O porquê está em [`NARRATIVE.md`](NARRATIVE.md) e o desenho em `index.html`, seção *jornada*.
+- **Corrigida** `.t-cross` em contexto escuro. A 1.1.0 repintava `__to` e `__why` para
+  `steel-dim` sem escurecer o cartão: **2,81:1** sobre `surface`, abaixo do mínimo de 4,5:1.
+  Agora `.t-dark .t-cross` escurece o cartão inteiro — os mesmos cinzas dão 7,04:1 sobre
+  `ink`, a borda vira `steel` (3,66:1, acima do mínimo de 3:1 para limite não-textual) e a
+  sombra dura vira a dourada, porque preta sobre `ink` não existe.
+- **Corrigidos** os outros dois estados de `.t-origin` sobre escuro. A 1.1.0 só clareou
+  `--unverified`; sobre `ink`, `--verified` dava **3,14:1** e `--rejected` **2,42:1**, e como
+  a borda do selo usa `currentColor`, o selo sumia junto com o texto. O estado da verificação
+  é o que a pessoa lê antes de decidir — ele não pode ser a parte apagada da tela.
+- **Acrescentado** o par `steel-on-ink` (3,66:1) a `contrast`, conferido por `contrast.mjs`.
 
 ### O que mudou em 1.1.0
 

@@ -338,6 +338,23 @@
 .t-dark .t-cross__to,
 .t-dark .t-cross__why      { color: var(--c-steel-dim); }
 .t-dark .t-origin__note    { color: var(--c-steel-dim); }
+
+/* O convite tem de virar escuro inteiro, não só o texto. Sem esta regra o
+   cartão continuava branco enquanto `__to` e `__why` viravam steel-dim —
+   2,81:1 sobre surface, abaixo do mínimo de 4,5:1 para texto. Sobre ink os
+   mesmos cinzas dão 7,04:1. A borda ink some sobre ink e vira steel
+   (3,66:1, acima do mínimo de 3:1 para limite não-textual); a sombra dura
+   preta também some e vira a dourada. O corte dourado à esquerda continua
+   sendo a borda esquerda, e sobre ink ele fica mais legível, não menos. */
+.t-dark .t-cross {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border-color: var(--c-steel);
+  border-left-color: var(--c-gold);
+  box-shadow: var(--shadow-hard-gold);
+}
+.t-dark .t-cross:hover,
+.t-dark .t-cross:focus-visible { box-shadow: 4px 4px 0 0 var(--c-gold); }
 .t-dark .t-empty__next     { color: var(--c-steel-dim); }
 .t-dark .t-fault__cost     { color: var(--c-paper-dim); }
 .t-dark .t-fault__where    { color: var(--c-steel-dim); }
@@ -352,7 +369,14 @@
 .t-dark .t-status--pending   { color: var(--c-attention-lift); }
 .t-dark .t-status--failed    { color: var(--c-negative-lift);  }
 .t-dark .t-status--simulated { color: var(--c-steel-dim);      }
+/* Os três estados de procedência precisam do mesmo tratamento: na v1.1.0 só
+   `--unverified` recebeu a versão clara. Sobre ink, positive dá 3,14:1 e
+   negative 2,42:1 — e como `.t-origin` desenha a borda com `currentColor`,
+   o selo inteiro sumia junto com o texto. O estado da verificação é
+   exatamente o que a pessoa precisa ler antes de decidir. */
 .t-dark .t-origin--unverified { color: var(--c-attention-lift); }
+.t-dark .t-origin--verified   { color: var(--c-positive-lift);  }
+.t-dark .t-origin--rejected   { color: var(--c-negative-lift);  }
 
 /* Ligação. Sem regra aqui o navegador pinta o link de #0000EE, que sobre ink
    dá 2,11:1 — e o link mais importante da suíte é o endereço do baker, que é

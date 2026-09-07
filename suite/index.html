@@ -229,6 +229,14 @@ body {
   text-transform: uppercase; letter-spacing: 0.16em;
   color: var(--c-steel-deep); margin: 0 0 var(--s-4);
 }
+/* Cartão de demonstração em fundo escuro. Existe para que a versão escura de
+   uma primitiva possa ser conferida ao lado da clara, e não só no código. */
+.demo--ink { background: var(--c-ink); color: var(--c-paper); }
+.demo--ink .demo__label { color: var(--c-steel-dim); }
+.demo--ink .demo__rule  { color: var(--c-steel-dim); }
+/* Caminho recusado: sem o corte dourado, e dito por escrito no rótulo.
+   A cor sozinha nunca carrega o significado. */
+.demo--out { background: var(--c-paper); border-style: dashed; }
 .demo__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
 .demo__stack { display: flex; flex-direction: column; gap: var(--s-3); }
 .demo__rule { font-size: var(--t-xs); color: var(--c-steel-deep); margin: var(--s-4) 0 0; line-height: 1.5; border-left: 2px solid var(--c-gold); padding-left: var(--s-3); }
@@ -787,6 +795,125 @@ body {
             a cadeia. Um baker vê o TAPS; um delegador comum nunca vê.
           </p>
           </div>
+        </div>
+      </div>
+
+      <!-- ---- OS TRES CAMINHOS ---- -->
+      <div class="rise" style="margin-top:var(--s-16)">
+        <h3 class="head__title" style="font-size:var(--t-xl)">Três caminhos.<br>Dois viraram passagem.</h3>
+        <p class="head__sub" style="margin-bottom:var(--s-8)">
+          <strong>O TAPS é local-first: não há servidor, não há login e não há porta aberta.</strong>
+          Isso elimina de saída o desenho óbvio — o Tezzet consultar o TAPS de alguém. Sobraram três
+          caminhos, e escolher entre eles era o trabalho. O teste que decidiu:
+          <strong>toda passagem de dado responde “isso está certo?”</strong>. A escolha está em
+          <code>tokens.json</code> → <code>crossing.paths</code>; o porquê, em <code>NARRATIVE.md</code>.
+        </p>
+      </div>
+
+      <div class="grid grid--3 grid--top rise">
+        <div class="demo">
+          <p class="demo__label">Pela cadeia · degrau 0 · sempre</p>
+          <p class="screen__say">
+            Os dois produtos leem a mesma TzKT. Responde <strong>de quem veio, qual lote, quantos
+            destinos e quanto entrou</strong>. Não precisa de acordo entre os produtos e funciona
+            mesmo que o TAPS não exista.
+          </p>
+          <p class="demo__rule">
+            Escolhido como base porque é o único que funciona sempre. Só sabe o que a cadeia sabe:
+            não sabe do corte, nem da dívida acumulada, nem de por que um ciclo não pagou.
+          </p>
+        </div>
+
+        <div class="demo">
+          <p class="demo__label">Por arquivo · degrau 1 · quando houver</p>
+          <p class="screen__say">
+            O baker publica o extrato do ciclo, assinado. O Tezzet lê e confere contra a cadeia.
+            Responde <strong>de que ciclo veio, a comissão, o retido abaixo do mínimo e o
+            acumulado</strong> — exatamente o que a cadeia não sabe.
+          </p>
+          <p class="demo__rule">
+            Escolhido como degrau, não como condição: a maioria dos bakers não roda TAPS, e uma
+            passagem que só funciona quando o outro lado coopera deixa a tela vazia para quase todo
+            mundo. Custa um formato, uma assinatura e um passo manual.
+          </p>
+        </div>
+
+        <div class="demo demo--out">
+          <p class="demo__label">Só descoberta · recusado como passagem</p>
+          <p class="screen__say">
+            Um convite, sem dado nenhum atravessando. <strong>Não responde “isso está certo?”</strong>,
+            porque não carrega dado — então não é passagem.
+          </p>
+          <p class="demo__rule">
+            Recusado aqui, não proibido. Dizer que o outro produto existe é <em>sugestão de
+            produto</em>: segue outra regra — só aparece para quem é candidato, e a qualificação é o
+            campo de <em>delegate</em> lido da cadeia — e quem decide sobre ela é produto, não desenho.
+          </p>
+        </div>
+      </div>
+
+      <!-- ---- A MARCA DA PROCEDENCIA, NOS DOIS CONTEXTOS ---- -->
+      <div class="grid grid--2 grid--top rise" style="margin-top:var(--s-8)">
+        <div class="demo">
+          <p class="demo__label">A procedência, sobre claro</p>
+          <div class="demo__stack">
+            <span class="t-origin t-origin--verified">
+              <span class="t-origin__from">Assinado</span>
+              <span class="t-origin__note">tz1fwnf…rZbA</span>
+              <span class="t-origin__flag">Confere</span>
+            </span>
+            <span class="t-origin t-origin--unverified">
+              <span class="t-origin__from">Pedido de transferência</span>
+              <span class="t-origin__note">TAPS neste computador</span>
+              <span class="t-origin__flag">Não verificado</span>
+            </span>
+            <span class="t-origin t-origin--rejected">
+              <span class="t-origin__from">Extrato recusado</span>
+              <span class="t-origin__note">a assinatura não corresponde</span>
+              <span class="t-origin__flag">Não confere</span>
+            </span>
+          </div>
+          <a class="t-cross" href="#jornada" style="margin-top:var(--s-4)">
+            <span class="t-cross__to">Passagem → Tezzet</span>
+            <span class="t-cross__what">O convite para atravessar</span>
+            <p class="t-cross__why">O corte dourado é a borda esquerda: o elemento está encostado na linha que separa os dois lados.</p>
+          </a>
+          <p class="demo__rule">
+            O estado da verificação é <strong>texto</strong>, não cor: <em>Confere</em>,
+            <em>Não verificado</em>, <em>Não confere</em>. Em preto e branco a linha continua inteira.
+          </p>
+        </div>
+
+        <div class="demo demo--ink t-dark">
+          <p class="demo__label">As mesmas, sobre escuro</p>
+          <div class="demo__stack">
+            <span class="t-origin t-origin--verified">
+              <span class="t-origin__from">Assinado</span>
+              <span class="t-origin__note">tz1fwnf…rZbA</span>
+              <span class="t-origin__flag">Confere</span>
+            </span>
+            <span class="t-origin t-origin--unverified">
+              <span class="t-origin__from">Pedido de transferência</span>
+              <span class="t-origin__note">TAPS neste computador</span>
+              <span class="t-origin__flag">Não verificado</span>
+            </span>
+            <span class="t-origin t-origin--rejected">
+              <span class="t-origin__from">Extrato recusado</span>
+              <span class="t-origin__note">a assinatura não corresponde</span>
+              <span class="t-origin__flag">Não confere</span>
+            </span>
+          </div>
+          <a class="t-cross" href="#jornada" style="margin-top:var(--s-4)">
+            <span class="t-cross__to">Passagem → Tezzet</span>
+            <span class="t-cross__what">O convite para atravessar</span>
+            <p class="t-cross__why">O mesmo elemento no console do TAPS, que é escuro. O corte fica mais legível sobre ink, não menos.</p>
+          </a>
+          <p class="demo__rule">
+            Consertado na 1.2.0. Sobre <code>ink</code>, <em>Confere</em> dava 3,14:1 e
+            <em>Não confere</em> 2,42:1 — e como a borda do selo usa <code>currentColor</code>, o selo
+            sumia junto com o texto. O convite ficava branco com texto de 2,81:1. Agora:
+            5,54:1, 5,57:1, 5,53:1 e 7,04:1.
+          </p>
         </div>
       </div>
 
