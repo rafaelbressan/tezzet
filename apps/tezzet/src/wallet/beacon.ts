@@ -2,7 +2,7 @@
 import '../polyfills';
 import { NetworkType } from '@ecadlabs/beacon-dapp';
 import { BeaconWallet } from '@taquito/beacon-wallet';
-import { TezosToolkit } from '@taquito/taquito';
+import { TezosToolkit, type Estimate } from '@taquito/taquito';
 import { mutezToTaquitoAmount } from '@tezos-suite/chain';
 import type { TezzetNetwork } from '../config/networks';
 import type { TransferEstimate } from './transfer';
@@ -22,6 +22,19 @@ export interface WalletPort {
   activeAddress(): Promise<string | null>;
   estimateTransfer(destination: string, amountMutez: bigint, source: string): Promise<TransferEstimate>;
   sendTransfer(destination: string, amountMutez: bigint): Promise<string>;
+
+  /** `baker === null` é parar de delegar: a operação sem destinatário. */
+  estimateSetDelegate(baker: string | null, source: string): Promise<TransferEstimate>;
+  sendSetDelegate(baker: string | null): Promise<string>;
+
+  estimateStake(amountMutez: bigint, source: string): Promise<TransferEstimate>;
+  sendStake(amountMutez: bigint): Promise<string>;
+
+  estimateUnstake(amountMutez: bigint, source: string): Promise<TransferEstimate>;
+  sendUnstake(amountMutez: bigint): Promise<string>;
+
+  estimateFinalizeUnstake(source: string): Promise<TransferEstimate>;
+  sendFinalizeUnstake(): Promise<string>;
 }
 
 export class BeaconNetworkError extends Error {
@@ -87,18 +100,14 @@ export class BeaconWalletPort implements WalletPort {
     amountMutez: bigint,
     source: string,
   ): Promise<TransferEstimate> {
-    const estimate = await this.tezos.estimate.transfer({
-      to: destination,
-      amount: mutezToTaquitoAmount(amountMutez),
-      mutez: true,
-      source,
-    });
-    return {
-      feeMutez: BigInt(estimate.suggestedFeeMutez),
-      burnMutez: BigInt(estimate.burnFeeMutez),
-      gasLimit: estimate.gasLimit,
-      storageLimit: estimate.storageLimit,
-    };
+    return toTransferEstimate(
+      await this.tezos.estimate.transfer({
+        to: destination,
+        amount: mutezToTaquitoAmount(amountMutez),
+        mutez: true,
+        source,
+      }),
+    );
   }
 
   /** Devolve o hash da operação. Quem assinou foi a carteira, não o Tezzet. */
@@ -108,4 +117,91 @@ export class BeaconWalletPort implements WalletPort {
       .send();
     return operation.opHash;
   }
+
+  /**
+   * Delegar, stakear, sair do stake e finalizar são quatro operações da
+   * cadeia, e as quatro passam pelo mesmo caminho das transferências: o
+   * Tezzet monta e estima, a carteira do usuário assina, o Tezzet injeta.
+   *
+   * A estimativa não é enfeite de tela. É ela que descobre, **antes** da
+   * assinatura, que o baker não aceita mais stake, que a conta não delega
+   * para ninguém, ou que não há gastável para a taxa — a cadeia simula a
+   * operação e recusa com o próprio motivo dela.
+   */
+  async estimateSetDelegate(baker: string | null, source: string): Promise<TransferEstimate> {
+    return toTransferEstimate(
+      await this.tezos.estimate.setDelegate(
+        baker === null ? { source } : { source, delegate: baker },
+      ),
+    );
+  }
+
+  async sendSetDelegate(baker: string | null): Promise<string> {
+    const operation = await this.tezos.wallet
+      .setDelegate(baker === null ? {} : { delegate: baker })
+      .send();
+    return operation.opHash;
+  }
+
+  async estimateStake(amountMutez: bigint, source: string): Promise<TransferEstimate> {
+    return toTransferEstimate(
+      await this.tezos.estimate.stake({
+        source,
+        amount: mutezToTaquitoAmount(amountMutez),
+        mutez: true,
+      }),
+    );
+  }
+
+  async sendStake(amountMutez: bigint): Promise<string> {
+    const operation = await this.tezos.wallet
+      .stake({ amount: mutezToTaquitoAmount(amountMutez), mutez: true })
+      .send();
+    return operation.opHash;
+  }
+
+  async estimateUnstake(amountMutez: bigint, source: string): Promise<TransferEstimate> {
+    return toTransferEstimate(
+      await this.tezos.estimate.unstake({
+        source,
+        amount: mutezToTaquitoAmount(amountMutez),
+        mutez: true,
+      }),
+    );
+  }
+
+  async sendUnstake(amountMutez: bigint): Promise<string> {
+    const operation = await this.tezos.wallet
+      .unstake({ amount: mutezToTaquitoAmount(amountMutez), mutez: true })
+      .send();
+    return operation.opHash;
+  }
+
+  /**
+   * `finalize_unstake` não leva valor: o protocolo recusa com
+   * `operations.invalid_nonzero_transaction_amount` se levar. Quanto volta é
+   * decidido pela cadeia, não por quem pede.
+   */
+  async estimateFinalizeUnstake(source: string): Promise<TransferEstimate> {
+    return toTransferEstimate(await this.tezos.estimate.finalizeUnstake({ source }));
+  }
+
+  async sendFinalizeUnstake(): Promise<string> {
+    const operation = await this.tezos.wallet.finalizeUnstake({}).send();
+    return operation.opHash;
+  }
+}
+
+/**
+ * Uma estimativa do Taquito vira os quatro números que a tela mostra. Nenhum
+ * deles é fixado: `storageLimit` fixo em 0 é o que faz uma operação falhar
+ * por `storage_exhausted` depois de a pessoa já ter assinado.
+ */
+function toTransferEstimate(estimate: Estimate): TransferEstimate {
+  return {
+    feeMutez: BigInt(estimate.suggestedFeeMutez),
+    burnMutez: BigInt(estimate.burnFeeMutez),
+    gasLimit: estimate.gasLimit,
+    storageLimit: estimate.storageLimit,
+  };
 }

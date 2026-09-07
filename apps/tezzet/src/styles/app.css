@@ -238,3 +238,148 @@ body {
   margin: -1px; padding: 0; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* --- delegação e stake ----------------------------------------------- */
+
+/* A diferença entre delegar e stakear. Tabela de verdade, com cabeçalho de
+   linha e de coluna: quem usa leitor de tela precisa ouvir "Se o baker for
+   punido, stakear, você perde parte do que congelou" como uma frase. */
+.difference {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+.difference__caption {
+  text-align: left;
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c-steel-dim);
+  padding-bottom: var(--s-2);
+}
+.difference th[scope='col'] {
+  text-align: left;
+  font-family: var(--f-display);
+  font-size: var(--t-base);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-paper);
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  border-bottom: 1px solid var(--c-steel);
+}
+.difference th[scope='row'] {
+  text-align: left;
+  font-weight: 600;
+  color: var(--c-steel-dim);
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  border-bottom: 1px solid var(--c-rule-dark);
+  vertical-align: top;
+  white-space: nowrap;
+}
+.difference td {
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  border-bottom: 1px solid var(--c-rule-dark);
+  color: var(--c-steel-dim);
+  vertical-align: top;
+}
+/* Em tela larga quem rotula a coluna é o `<th scope="col">`. `display: none`
+   e não `visually-hidden`: assim o rótulo sai também da árvore de
+   acessibilidade, em vez de ser lido duas vezes por linha. */
+.difference__for { display: none; }
+/* A coluna da ação em que a pessoa está fica legível; a outra continua
+   presente. Esconder a outra seria esconder a comparação. */
+.difference__here { color: var(--c-paper-dim); }
+.difference th[aria-current='true'] { border-bottom-color: var(--c-gold); }
+
+/* Abaixo de 600 px a comparação empilha, uma linha por bloco.
+   Três colunas de texto não cabem em 375 px: a tabela media 378 px, a página
+   inteira deslizava para o lado e a linha da punição — a que mais importa —
+   ficava com o lado do stake fora da tela. Rolagem lateral não é uma
+   comparação: ela mostra um lado de cada vez, que é exatamente o que este
+   bloco existe para impedir. */
+@media (max-width: 600px) {
+  .difference,
+  .difference tbody,
+  .difference tr,
+  .difference th,
+  .difference td {
+    display: block;
+  }
+  /* Os rótulos de coluna passam para dentro de cada célula. */
+  .difference thead { display: none; }
+  /* Sem isto a legenda continua `table-caption` dentro de um pai que já é
+     bloco, encolhe para a largura do conteúdo e uma frase vira oito linhas. */
+  .difference__caption { display: block; }
+
+  .difference tr {
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-rule-dark);
+  }
+  .difference tr:last-child { border-bottom: 0; }
+
+  .difference th[scope='row'] {
+    white-space: normal;
+    border-bottom: 0;
+    padding: 0 0 var(--s-2);
+    color: var(--c-paper);
+    font-family: var(--f-display);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .difference td {
+    display: flex;
+    gap: var(--s-3);
+    border-bottom: 0;
+    padding: var(--s-1) 0;
+  }
+
+  .difference__for {
+    display: block;
+    flex: 0 0 5.5rem;
+    font-family: var(--f-data);
+    font-size: var(--t-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--c-steel-dim);
+  }
+  .difference__value { flex: 1; overflow-wrap: anywhere; }
+}
+
+.baker__name {
+  font-family: var(--f-display);
+  font-size: var(--t-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-paper);
+}
+.baker__section {
+  font-family: var(--f-display);
+  font-size: var(--t-base);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-steel-dim);
+  margin: 0;
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--c-rule-dark);
+}
+.baker__rate {
+  font-family: var(--f-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-md);
+  color: var(--c-paper);
+  margin: 0;
+}
+
+/* O aviso da espera do unstake. Ele é a única coisa nesta tela que a pessoa
+   não pode desfazer depois, então tem a marca de atenção do sistema e fica
+   acima do botão — nunca abaixo, nunca depois da confirmação. */
+.wait {
+  border-left: 3px solid var(--c-attention);
+  padding: var(--s-3) var(--s-4);
+  margin: var(--s-4) 0 0;
+  font-size: var(--t-sm);
+  color: var(--c-paper-dim);
+  max-width: var(--measure);
+}

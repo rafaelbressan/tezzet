@@ -1,7 +1,7 @@
 # Tezzet — app
 
-Carteira Tezos da suíte Tezos.Rio. **Primeira onda: leitura e Beacon, sem
-custódia.** O app lê a cadeia e monta as operações; quem assina é a carteira
+Carteira Tezos da suíte Tezos.Rio. **Segunda onda: delegação e staking, ainda
+sem custódia.** O app lê a cadeia e monta as operações; quem assina é a carteira
 que a pessoa já usa. Não há chave privada, semente nem frase de recuperação em
 lugar nenhum deste código — e há um teste que reprova se alguém trouxer uma
 (`test/sem-chave.test.ts`).
@@ -18,7 +18,20 @@ Stack: Tauri v2 + React + TypeScript, decidida na
 | Histórico | TzKT com paginação por cursor (`lastId`), não por `offset` |
 | Receber | QR, endereço inteiro, e **cópia que expira em 45 s** |
 | Enviar | estimativa na rede, conferência de saldo, assinatura na carteira, confirmação Tenderbake |
+| Delegar | trocar de baker e parar de delegar; os números do baker vêm do nó, sem lista e sem ranking |
+| Stake | congelar, tirar e finalizar — com a **espera mostrada antes** de confirmar |
 | Rede | seletor lido de `public/networks.json`; rede de teste grita, mainnet fica quieta |
+
+Delegar e stakear são abas separadas porque são ações diferentes: delegar não
+tira dinheiro da conta e punição do baker não atinge quem só delega; stakear
+congela e expõe o valor à punição. A tabela dessa diferença fica no topo das
+duas telas, não atrás de um "saiba mais".
+
+As três contas que o app faz sozinho — a espera do unstake, a capacidade livre
+do baker e o rendimento realizado — estão medidas contra a rede em
+[`docs/evidence/BRES-47-medicao-delegacao-e-stake.md`](../../docs/evidence/BRES-47-medicao-delegacao-e-stake.md).
+**A taxa de delegação não existe na cadeia** e o app diz isso em vez de
+mostrar um número que não pode verificar.
 
 ## Rodar
 

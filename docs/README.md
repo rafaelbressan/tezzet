@@ -31,6 +31,7 @@ Relatório de spike não é documentação de produto, mas é o que sustenta uma
 | Documento | O que sustenta |
 |---|---|
 | [`evidence/BRES-66-medicao-p5.md`](evidence/BRES-66-medicao-p5.md) | A medição que fechou P3.b/c/e, a entropia de P4 e P5 — incluindo o resultado ruim: `KeyInfo.getSecurityLevel() = Software` no emulador e `setInvalidatedByBiometricEnrollment(true)` sem efeito. É a base da ADR-0001 §12 e do BRES-67. |
+| [`evidence/BRES-47-medicao-delegacao-e-stake.md`](evidence/BRES-47-medicao-delegacao-e-stake.md) | As três contas que a tela de delegação e stake do Tezzet faz sozinha — espera do unstake, capacidade livre do baker e rendimento — medidas contra 389 bakers e 400 pedidos de unstake reais. Inclui o que **não** dá para medir: a taxa de delegação não existe na cadeia. |
 
 ## Análise dos sistemas herdados
 
