@@ -1,0 +1,4 @@
+node_modules/
+secrets/
+medicao.json
+medicao-*.json

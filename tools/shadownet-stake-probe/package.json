@@ -1,0 +1,16 @@
+{
+  "name": "@tezosrio/shadownet-stake-probe",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Mede, assinando na Shadownet, a diferença entre o stake pedido e o stake congelado (BRES-119). Fora do app de propósito: aqui há assinatura.",
+  "scripts": {
+    "medir": "node medir.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@taquito/signer": "^25.0.0",
+    "@taquito/taquito": "^25.0.0",
+    "@taquito/utils": "^25.0.0"
+  }
+}

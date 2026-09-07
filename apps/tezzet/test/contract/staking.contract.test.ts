@@ -5,9 +5,12 @@ import {
   ProtocolConstantsProvider,
   TzKTHttp,
   requireInteger,
+  requireMutez,
   requireObject,
+  requireString,
 } from '@tezos-suite/chain';
 import { PrefixV2, b58Encode } from '@taquito/utils';
+import { fetchAccount } from '../../src/chain/account';
 import { fetchBaker, NotABakerError } from '../../src/chain/baker';
 import { fetchBakerRecord, measureStakingYield } from '../../src/chain/baker-record';
 import { readStakingConstants } from '../../src/chain/protocol';
@@ -65,6 +68,68 @@ async function pedidoReal(network: TezzetNetwork) {
     unlockCycle: requireInteger(row, 'unlockCycle', 'unstake_requests[0]'),
     unlockLevel: requireInteger(row, 'unlockLevel', 'unstake_requests[0]'),
   };
+}
+
+/**
+ * BRES-119. O que a cadeia guarda de stake externo **não** é mutez: é
+ * pseudotoken. A ida arredonda para baixo e a volta é reavaliada a cada
+ * ciclo, então o saldo em stake de uma conta não é a soma do que ela pediu.
+ *
+ * Encontrado assinando na Shadownet em 2026-09-06: 50,000000 pedidos
+ * congelaram 49,999999, e um "continua em stake" de 29,999999 virou
+ * 30,000004 minutos depois. A tela prometia esses números como exatos.
+ *
+ * Este teste é o que impede a promessa de voltar. Ele não pode assinar nada
+ * — não existe chave neste repositório, e `sem-chave.test.ts` garante que
+ * não vai existir —, então ele afirma o mesmo fato pelo lado da leitura: em
+ * contas reais, o saldo em stake diverge da soma dos pedidos. No dia em que
+ * parar de divergir para todo mundo, o aviso da tela virou mentira e esta
+ * linha reprova.
+ */
+async function stakersComHistoricoCompleto(network: TezzetNetwork, quantos: number) {
+  const http = tzkt(network);
+  const { body: recentes } = await http.get<unknown[]>('/v1/staking/updates', {
+    limit: 200,
+    'sort.desc': 'id',
+    type: 'stake',
+    select: 'staker',
+  });
+
+  const enderecos: string[] = [];
+  for (const value of recentes ?? []) {
+    const address = requireString(requireObject(value, '/v1/staking/updates[].staker'), 'address', '/v1/staking/updates[].staker');
+    if (!enderecos.includes(address)) enderecos.push(address);
+    if (enderecos.length === quantos) break;
+  }
+  expect(enderecos.length, `${network.label} não tem nenhum stake recente para conferir`).toBeGreaterThan(0);
+
+  const LIMITE = 1000;
+  const contas = [];
+  for (const address of enderecos) {
+    const { body: updates } = await http.get<unknown[]>('/v1/staking/updates', {
+      staker: address,
+      limit: LIMITE,
+      'sort.asc': 'id',
+    });
+    const rows = updates ?? [];
+    // Histórico truncado não serve: a soma sairia incompleta e a divergência
+    // seria do teste, não da cadeia.
+    if (rows.length >= LIMITE) continue;
+
+    let pedidoLiquidoMutez = 0n;
+    for (const [index, value] of rows.entries()) {
+      const where = `/v1/staking/updates[${index}]`;
+      const row = requireObject(value, where);
+      const type = requireString(row, 'type', where);
+      if (type === 'stake') pedidoLiquidoMutez += requireMutez(row, 'amount', where);
+      if (type === 'unstake') pedidoLiquidoMutez -= requireMutez(row, 'amount', where);
+    }
+
+    const conta = await fetchAccount(http, address);
+    contas.push({ address, pedidoLiquidoMutez, stakedMutez: conta.staked });
+  }
+
+  return contas;
 }
 
 describe.each([
@@ -129,6 +194,28 @@ describe.each([
       NotABakerError,
     );
   }, 30_000);
+
+  it('o saldo em stake não é a soma dos mutez pedidos — a cadeia guarda pseudotokens', async () => {
+    const contas = await stakersComHistoricoCompleto(network, 8);
+    expect(contas.length, `${network.label} não deu nenhum staker com histórico inteiro`).toBeGreaterThan(0);
+
+    const divergentes = contas.filter((conta) => conta.stakedMutez !== conta.pedidoLiquidoMutez);
+    const relato = contas
+      .map((c) => `${c.address}: pedido ${c.pedidoLiquidoMutez} mutez, em stake ${c.stakedMutez} mutez (${c.stakedMutez - c.pedidoLiquidoMutez})`)
+      .join('\n');
+
+    expect(
+      divergentes.length,
+      'nenhuma conta divergiu: se isso for verdade, o stake voltou a ser guardado em ' +
+        `mutez e o aviso da revisão virou mentira\n${relato}`,
+    ).toBeGreaterThan(0);
+
+    // O que a tela promete é `pedido`; o que a cadeia mostra depois é
+    // `stakedMutez`. A diferença é o tamanho da mentira que o aviso cobre.
+    for (const conta of divergentes) {
+      expect(conta.stakedMutez).toBeGreaterThanOrEqual(0n);
+    }
+  }, 120_000);
 
   it('o rendimento de stake sai de ciclos fechados de verdade, ou diz que não sabe', async () => {
     const http = tzkt(network);

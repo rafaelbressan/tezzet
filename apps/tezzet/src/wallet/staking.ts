@@ -124,10 +124,32 @@ export interface StakeRequest {
 }
 
 export interface StakePlan {
+  /**
+   * O que sai do gastável. Este número é exato: é o `amount` da operação.
+   *
+   * **Não é o que vai aparecer em stake.** O protocolo não guarda stake
+   * externo em mutez: guarda em pseudotokens. O crédito é
+   * `floor(pedido / taxa)` e o que se lê depois é
+   * `floor(pseudotokens × taxa_de_agora)`, com a taxa subindo a cada bloco.
+   *
+   * A diferença não tem sinal fixo, e é onde é fácil errar. Assinando na
+   * Shadownet, quatro contas novas: três leram 1 mutez a menos no bloco
+   * seguinte, uma leu 6 a mais; dez minutos depois, as de baixo já tinham
+   * passado por cima. Não dá para prometer o número, nem para escrever que
+   * ele fica abaixo.
+   *
+   * Por isso o plano não tem campo `stakedAfterMutez`: ele seria um número
+   * inventado, e a tela o mostraria como promessa. E por isso o app não
+   * compensa a diferença pedindo 1 mutez a mais — seria assinar um valor
+   * diferente do que a pessoa leu.
+   *
+   * A medição está em `tools/shadownet-stake-probe`, e o que ela registrou é
+   * afirmado em `test/stake-medido.test.ts`.
+   */
   readonly amountMutez: bigint;
   readonly baker: string;
   readonly cost: OperationCost;
-  /** Gastável depois de congelar o valor **e** pagar a taxa. */
+  /** Gastável depois de congelar o valor **e** pagar a taxa. Exato. */
   readonly spendableAfterMutez: bigint;
 }
 
@@ -171,8 +193,19 @@ export interface UnstakeRequestPlanInput {
 }
 
 export interface UnstakePlan {
+  /** O que este pedido tira do stake. Exato: é o `amount` da operação. */
   readonly amountMutez: bigint;
-  readonly stakedAfterMutez: bigint;
+  /**
+   * O que deve continuar em stake — **aproximado**, e o nome diz isso porque
+   * a tela precisa dizer isso.
+   *
+   * É `stakedMutez − amountMutez`, uma subtração estática sobre um saldo que
+   * a cadeia reavalia sozinha: o stake é guardado em pseudotokens e o valor
+   * em mutez sobe com o rendimento do baker e desce com punição. Medido
+   * assinando na Shadownet: prometido 31,000009, e a cadeia mostrando
+   * 31,000015 noventa segundos depois, sem ninguém assinar nada no meio.
+   */
+  readonly stakedAfterApproxMutez: bigint;
   readonly cost: OperationCost;
 }
 
@@ -191,7 +224,7 @@ export function planUnstake(request: UnstakeRequestPlanInput): UnstakePlan {
 
   return {
     amountMutez: request.amountMutez,
-    stakedAfterMutez: request.stakedMutez - request.amountMutez,
+    stakedAfterApproxMutez: request.stakedMutez - request.amountMutez,
     // A taxa sai do gastável, não do stake: sem gastável não dá para sair do
     // stake, e descobrir isso depois de assinar é o pior momento.
     cost: costOf(request.estimate, request.spendableMutez, 'a saída do stake'),
