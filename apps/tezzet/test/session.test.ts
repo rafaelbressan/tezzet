@@ -5,12 +5,16 @@ import { fakeWallet } from './helpers/fake-chain';
 
 /**
  * O navegador recusa `fetch` chamado como método de outro objeto. A camada de
- * cadeia faz exatamente isso — `this.fetchImpl(url, init)` — e o app quebrava
+ * cadeia fazia exatamente isso — `this.fetchImpl(url, init)` — e o app quebrava
  * em **toda** leitura, do saldo ao envio, com "A rede não respondeu".
  *
  * Nada acusava: o `fetch` do undici (Node e jsdom) não confere o receptor, e
  * os testes passavam verdes com o app incapaz de ler a cadeia num navegador.
  * Este teste põe a regra do navegador no lugar do `fetch` global.
+ *
+ * A correção mora no pacote desde a BRES-86 (`boundGlobalFetch()`), então o
+ * app não passa mais `fetchImpl` nenhum. O teste fica: é ele que reprova se
+ * um pino futuro trouxer o defeito de volta.
  */
 const catalogo = parseNetworkCatalog({
   defaultNetworkId: 'shadownet',
