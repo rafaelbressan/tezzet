@@ -122,10 +122,27 @@ quando a suíte for publicada para a comunidade Tezos. Uma versão em inglês do
 
 ## Versão
 
-`1.1.0` — declarada em `tokens/tokens.json` (`$version`). Mudança ou acréscimo de valor
+`1.2.0` — declarada em `tokens/tokens.json` (`$version`). Mudança ou acréscimo de valor
 de token é *minor*; **remoção ou renomeação de token ou de primitiva `.t-*` é *major***.
 A regra passa a cobrir as primitivas explicitamente: elas são o contrato de consumo tanto
 quanto os tokens são.
+
+### O que mudou em 1.2.0
+
+- **Acrescentada** a decisão da passagem em `tokens.json` → `crossing`: o teste de aceite
+  (*toda passagem de dado responde "isso está certo?"*) e os três caminhos com a escolha —
+  cadeia como degrau 0, arquivo assinado como degrau 1, descoberta recusada como passagem.
+  O porquê está em [`NARRATIVE.md`](NARRATIVE.md) e o desenho em `index.html`, seção *jornada*.
+- **Corrigida** `.t-cross` em contexto escuro. A 1.1.0 repintava `__to` e `__why` para
+  `steel-dim` sem escurecer o cartão: **2,81:1** sobre `surface`, abaixo do mínimo de 4,5:1.
+  Agora `.t-dark .t-cross` escurece o cartão inteiro — os mesmos cinzas dão 7,04:1 sobre
+  `ink`, a borda vira `steel` (3,66:1, acima do mínimo de 3:1 para limite não-textual) e a
+  sombra dura vira a dourada, porque preta sobre `ink` não existe.
+- **Corrigidos** os outros dois estados de `.t-origin` sobre escuro. A 1.1.0 só clareou
+  `--unverified`; sobre `ink`, `--verified` dava **3,14:1** e `--rejected` **2,42:1**, e como
+  a borda do selo usa `currentColor`, o selo sumia junto com o texto. O estado da verificação
+  é o que a pessoa lê antes de decidir — ele não pode ser a parte apagada da tela.
+- **Acrescentado** o par `steel-on-ink` (3,66:1) a `contrast`, conferido por `contrast.mjs`.
 
 ### O que mudou em 1.1.0
 

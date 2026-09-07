@@ -44,6 +44,62 @@ São os dois lados de uma única transação econômica na Tezos: alguém delega
 
 Isso é curto o suficiente para caber num cabeçalho e específico o suficiente para não servir para mais nada.
 
+## A passagem entre os dois lados
+
+O corte separa dois produtos que descrevem **o mesmo evento**. Um pagamento de delegação tem dois registros: o delegador vê um valor entrar; o baker sabe de que ciclo ele veio, qual foi a recompensa bruta, quanto foi comissão e o que ficou retido abaixo do mínimo. Hoje cada lado vê a própria metade e adivinha a outra. A passagem existe para que cada lado possa ler a metade do outro.
+
+### O teste que decide se ela deve existir
+
+> **O que a pessoa deixa de conseguir fazer se a passagem não existir?**
+
+Se a resposta for "nada, ela abre o outro aplicativo", não é passagem — é propaganda cruzada, e a resposta certa é não construir.
+
+Aqui a resposta não é "nada". **Quem delega pelo Tezzet não consegue conferir se recebeu o que era devido.** A cadeia diz que 0,125000 XTZ entraram, de que lote e para quantos destinos. Ela não diz a recompensa bruta, a comissão, o mínimo aplicado nem o que ficou acumulado — nada disso está na cadeia, porque é política do baker. Sem a passagem, a pergunta *isso está certo?* não tem resposta possível: nem no Tezzet, nem num explorador genérico. E abrir o outro aplicativo não resolve — o TAPS é do baker, roda na máquina dele, e o delegador nunca vai ter acesso a ele.
+
+Disso sai o critério de aceite de qualquer passagem futura:
+
+> **Toda passagem de dado responde "isso está certo?".**
+
+### A restrição que decide o desenho
+
+**O TAPS é local-first: não há servidor, não há login e não há porta aberta.** Isso elimina de saída o desenho óbvio — o Tezzet consultar o TAPS de alguém. Sobram três caminhos.
+
+| Caminho | O que ele responde | O que custa |
+|---|---|---|
+| **Pela cadeia** — os dois leem a mesma TzKT | de quem veio, qual lote, quantos destinos, quanto entrou, e quando | nada: não precisa de acordo entre os produtos, e funciona mesmo que o TAPS não exista |
+| **Por arquivo** — o baker publica o extrato do ciclo, assinado; o Tezzet lê e confere contra a cadeia | de que ciclo veio, a comissão, o retido abaixo do mínimo e o acumulado | um formato, uma assinatura, e um passo manual do baker |
+| **Só descoberta** — um convite, sem dado atravessando | nada | nada |
+
+**A escolha: os dois primeiros, em degraus. O terceiro não é passagem.**
+
+**Por que os dois, e não um.** A cadeia sozinha não responde à pergunta — ela mostra o valor, não se o valor está certo. O arquivo sozinho não serve porque a maioria dos bakers não roda TAPS: uma passagem que só funciona quando o outro lado coopera deixa a tela vazia para quase todo mundo. Em degraus, o degrau 0 funciona sempre e o degrau 1 acrescenta o que só o outro lado sabe. O degrau 1 é uma resposta melhor, não uma condição para haver resposta.
+
+**Por que a descoberta não é passagem.** Ela não carrega dado nenhum, então não passa no teste. Isso não a proíbe — só a tira daqui. Dizer que o outro produto existe é **sugestão de produto**, governada por outra regra (*só aparece para quem é candidato*, e na Tezos dá para saber quem é candidato lendo o campo de *delegate* da cadeia), e quem decide sobre ela é produto, não desenho.
+
+### A regra que não se negocia
+
+> **A passagem carrega dado, nunca autoridade.**
+
+Nenhuma sessão, credencial, permissão ou chave atravessa o corte. A sessão que abre o console do TAPS não é a que assina dinheiro. Três consequências permanentes:
+
+1. **A suíte não tem barra de aplicativos nem seletor de produto.** Um seletor implica uma sessão que abrange os dois. As passagens são contextuais e de mão única: aparecem onde a pergunta nasce.
+2. **A suíte não tem conta.** O que liga uma pessoa dos dois lados é um **endereço** — público e conferível por qualquer um. Quando a origem precisa ser provada, **assina-se o dado; não se autentica a pessoa.**
+3. **Todo dado que chega do outro lado chega desconfiado.** Ele aparece marcado com `.t-origin`: de onde veio e em que estado está a verificação, em **texto**, antes do valor. A primitiva não tem estado padrão — **sem procedência, o dado não entra na tela.**
+
+### Os dois sentidos
+
+| | **Passagem A — o extrato do ciclo** | **Passagem B — o reforço da carteira** |
+|---|---|---|
+| Direção | TAPS produz → Tezzet lê | TAPS pede → Tezzet decide |
+| Para quem | O delegador | O baker |
+| Onde aparece | No detalhe de uma entrada vinda do baker para quem se delega | Na tela do ciclo, só quando o saldo não cobre o lote |
+| O que atravessa | Dado assinado, conferido contra a cadeia | Um endereço e um valor, não verificados |
+| O que nunca atravessa | Autoridade | Autoridade |
+
+O convite para atravessar é `.t-cross`, e ele nunca é o único caminho: ao lado dele há sempre a mesma informação em forma copiável, para quem não usa o outro produto.
+
+O texto real de cada tela, os estados de falha e o que foi recusado estão em [`JOURNEY.md`](JOURNEY.md). O desenho aplicado está em `index.html`, seção **jornada**.
+
 ## O que muda em cada produto
 
 **Nada de paleta própria.** Nem Tezzet nem TAPS ganham uma cor "sua". A única distinção permitida entre os dois é o rótulo. Se um dia um terceiro produto entrar na suíte, ele entra do mesmo jeito: mesmo dourado, mesmo corte, outro verbo.
