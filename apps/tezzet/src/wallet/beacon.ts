@@ -21,7 +21,13 @@ export interface WalletPort {
   disconnect(): Promise<void>;
   activeAddress(): Promise<string | null>;
   estimateTransfer(destination: string, amountMutez: bigint, source: string): Promise<TransferEstimate>;
-  sendTransfer(destination: string, amountMutez: bigint): Promise<string>;
+  /**
+   * `estimate` é a mesma que a tela de revisão mostrou. Sem ela o Taquito
+   * re-estima na hora de assinar, e a pessoa aprova números que não são os
+   * que confirmou — se o destino for alocado por outra operação nesse
+   * intervalo, a taxa e o burn mudam sem aviso.
+   */
+  sendTransfer(destination: string, amountMutez: bigint, estimate: TransferEstimate): Promise<string>;
 
   /** `baker === null` é parar de delegar: a operação sem destinatário. */
   estimateSetDelegate(baker: string | null, source: string): Promise<TransferEstimate>;
@@ -111,9 +117,16 @@ export class BeaconWalletPort implements WalletPort {
   }
 
   /** Devolve o hash da operação. Quem assinou foi a carteira, não o Tezzet. */
-  async sendTransfer(destination: string, amountMutez: bigint): Promise<string> {
+  async sendTransfer(destination: string, amountMutez: bigint, estimate: TransferEstimate): Promise<string> {
     const operation = await this.tezos.wallet
-      .transfer({ to: destination, amount: mutezToTaquitoAmount(amountMutez), mutez: true })
+      .transfer({
+        to: destination,
+        amount: mutezToTaquitoAmount(amountMutez),
+        mutez: true,
+        fee: mutezToTaquitoAmount(estimate.feeMutez),
+        gasLimit: estimate.gasLimit,
+        storageLimit: estimate.storageLimit,
+      })
       .send();
     return operation.opHash;
   }

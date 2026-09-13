@@ -77,8 +77,8 @@ export function fakeWallet(estimate: TransferEstimate = NO_COST): FakeWallet {
       estimated.push(`transfer:${destination}`);
       return estimate;
     },
-    sendTransfer: async (destination) => {
-      signed.push(`transfer:${destination}`);
+    sendTransfer: async (destination, _amountMutez, estimate) => {
+      signed.push(`transfer:${destination}:${estimate.feeMutez}:${estimate.gasLimit}:${estimate.storageLimit}`);
       return 'ooTransfer';
     },
     estimateSetDelegate: async (baker) => {

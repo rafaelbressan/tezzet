@@ -204,7 +204,10 @@ body {
 .form__actions { display: flex; gap: var(--s-3); margin-top: var(--s-6); flex-wrap: wrap; }
 
 .receipt {
-  border-left: 3px solid var(--c-positive);
+  /* positive é 2,70:1 sobre ink-soft — abaixo do 3:1 que a WCAG 1.4.11 pede
+     para elemento de interface não textual. positive-lift é o mesmo matiz
+     clareado para fundo escuro (suite/tokens/tokens.json), e passa aqui. */
+  border-left: 3px solid var(--c-positive-lift);
   padding-left: var(--s-4);
 }
 .receipt__line { display: flex; justify-content: space-between; gap: var(--s-4); font-size: var(--t-sm); }
