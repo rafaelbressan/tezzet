@@ -66,7 +66,7 @@ export function SendScreen({ session, address }: { session: ChainSession; addres
         // Lido antes de injetar: é o nível a partir do qual o `branch` da
         // operação expira, e sem ele "não achei" nunca vira "nunca entrou".
         const branchLevel = await session.head.getHeadLevel();
-        const hash = await session.wallet.sendTransfer(plan.destination, plan.amountMutez);
+        const hash = await session.wallet.sendTransfer(plan.destination, plan.amountMutez, plan);
         setStage({ kind: 'sent', plan, hash, branchLevel });
       } catch (cause) {
         setError(cause);

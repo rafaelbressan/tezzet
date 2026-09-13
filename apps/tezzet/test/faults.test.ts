@@ -15,17 +15,28 @@ describe('describeFault', () => {
     expect(`${fault.what}${fault.where}${fault.cost}`).not.toContain('[object Object]');
   });
 
-  it('a rejeição do Beacon mostra o errorType, não o "type" genérico', () => {
-    // A carga real, capturada ao fechar o modal de pareamento: `type` diz
-    // apenas "é um erro"; `errorType` é o que a pessoa precisa ler.
+  it('fechar o modal do Beacon mostra frase em português, não o errorType cru', () => {
+    // A carga real, capturada ao fechar o modal de pareamento.
     const fault = describeFault(
       { type: 'error', errorType: 'ABORTED_ERROR', id: 'abc' },
       'A conexão com a carteira não foi feita.',
     );
 
-    expect(fault.what).toContain('ABORTED_ERROR');
+    expect(fault.what).toBe('Você fechou a janela da carteira.');
+    expect(fault.where).toBe('ABORTED_ERROR');
+  });
+
+  it('errorType sem tradução ainda aparece, e não o "type" genérico', () => {
+    // `type` diz apenas "é um erro"; `errorType` é o único dado útil quando
+    // não há tradução conhecida para ele.
+    const fault = describeFault(
+      { type: 'error', errorType: 'PEER_UNREACHABLE', id: 'abc' },
+      'A conexão com a carteira não foi feita.',
+    );
+
+    expect(fault.what).toContain('PEER_UNREACHABLE');
     expect(fault.what).not.toContain('{');
-    expect(fault.where).toContain('ABORTED_ERROR');
+    expect(fault.where).toContain('PEER_UNREACHABLE');
   });
 
   it('cai no nome do tipo quando o objeto não tem texto nenhum', () => {

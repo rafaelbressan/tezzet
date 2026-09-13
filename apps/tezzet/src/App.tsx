@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TZKT_ATTRIBUTION } from '@tezos-suite/chain';
 import { loadNetworkCatalog, movesRealMoney, selectNetwork } from './config/networks';
 import { describeFault } from './lib/faults';
@@ -29,12 +29,55 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
+const tabButtonId = (id: TabId) => `tab-${id}`;
+const tabPanelId = (id: TabId) => `panel-${id}`;
+
 export function App() {
   const catalog = useAsync(() => loadNetworkCatalog(), []);
   const [networkId, setNetworkId] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>('saldo');
   const [pendingNetworkId, setPendingNetworkId] = useState<string | null>(null);
+  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({} as Record<TabId, HTMLButtonElement | null>);
+
+  // Padrão ARIA de tablist: a seta move o foco E a seleção (ativação
+  // automática) — só uma aba fica no tabIndex 0 por vez, o resto sai da
+  // ordem de tabulação. Sem isto as quatro abas entram na tabulação normal
+  // e as setas não fazem nada, que é o que a QA reprovou.
+  const moveTab = useCallback((from: TabId, delta: 1 | -1) => {
+    const index = TABS.findIndex((item) => item.id === from);
+    const next = TABS[(index + delta + TABS.length) % TABS.length];
+    if (!next) return;
+    setTab(next.id);
+    tabRefs.current[next.id]?.focus();
+  }, []);
+
+  const onTabKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, id: TabId) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        moveTab(id, 1);
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        moveTab(id, -1);
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        const first = TABS[0];
+        if (first) {
+          setTab(first.id);
+          tabRefs.current[first.id]?.focus();
+        }
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        const last = TABS[TABS.length - 1];
+        if (last) {
+          setTab(last.id);
+          tabRefs.current[last.id]?.focus();
+        }
+      }
+    },
+    [moveTab],
+  );
 
   // A rede escolhida é lembrada, mas só vale se ainda existir na configuração:
   // uma rede desligada não pode voltar pela porta dos fundos do armazenamento.
@@ -179,23 +222,37 @@ export function App() {
               {TABS.map((item) => (
                 <button
                   key={item.id}
+                  ref={(node) => {
+                    tabRefs.current[item.id] = node;
+                  }}
+                  id={tabButtonId(item.id)}
                   role="tab"
                   type="button"
                   className="tabs__item"
                   aria-selected={tab === item.id}
+                  aria-controls={tabPanelId(item.id)}
+                  tabIndex={tab === item.id ? 0 : -1}
                   onClick={() => setTab(item.id)}
+                  onKeyDown={(event) => onTabKeyDown(event, item.id)}
                 >
                   {item.label}
                 </button>
               ))}
             </nav>
 
-            {tab === 'saldo' && <BalanceScreen session={session} address={address} />}
-            {tab === 'historico' && <HistoryScreen session={session} address={address} />}
-            {tab === 'receber' && <ReceiveScreen session={session} address={address} />}
-            {tab === 'enviar' && <SendScreen session={session} address={address} />}
-            {tab === 'delegar' && <DelegateScreen session={session} address={address} />}
-            {tab === 'stake' && <StakeScreen session={session} address={address} />}
+            <div
+              role="tabpanel"
+              id={tabPanelId(tab)}
+              aria-labelledby={tabButtonId(tab)}
+              tabIndex={0}
+            >
+              {tab === 'saldo' && <BalanceScreen session={session} address={address} />}
+              {tab === 'historico' && <HistoryScreen session={session} address={address} />}
+              {tab === 'receber' && <ReceiveScreen session={session} address={address} />}
+              {tab === 'enviar' && <SendScreen session={session} address={address} />}
+              {tab === 'delegar' && <DelegateScreen session={session} address={address} />}
+              {tab === 'stake' && <StakeScreen session={session} address={address} />}
+            </div>
           </>
         )}
       </main>

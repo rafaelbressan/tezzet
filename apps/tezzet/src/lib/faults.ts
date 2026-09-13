@@ -151,6 +151,16 @@ export function describeFault(error: unknown, cost: string, attempts = 1): Fault
 }
 
 /**
+ * `errorType` do Beacon que o app sabe traduzir para uma frase em português.
+ * Fechar o modal de pareamento é o jeito normal de desistir, não uma falha, e
+ * antes desta tabela a tela mostrava o JSON cru
+ * (`{"type":"error",...,"errorType":"ABORTED_ERROR"}`) em vez de uma frase.
+ */
+const BEACON_FAULTS: Record<string, string> = {
+  ABORTED_ERROR: 'Você fechou a janela da carteira.',
+};
+
+/**
  * O que um SDK de terceiro lança nem sempre é um `Error`. O Beacon rejeita com
  * objetos simples, e `String(objeto)` vira **"[object Object]"** — que foi
  * exatamente o que a tela mostrou na primeira versão. Aqui os campos que esses
@@ -169,9 +179,14 @@ function descreverDesconhecido(error: unknown): { what: string; where: string } 
     const tipo = campoDeTexto(bag, ['errorType', 'name', 'code', 'type']);
 
     if (texto) return { what: texto, where: tipo ?? 'erro sem tipo' };
-    // Sem mensagem: o tipo vira a frase, e a carga bruta vai para a linha de
-    // origem — em vez de o JSON inteiro virar o título do painel.
-    if (tipo) return { what: `O erro veio sem mensagem, do tipo ${tipo}.`, where: serializar(error) };
+    if (tipo) {
+      const conhecido = BEACON_FAULTS[tipo];
+      if (conhecido) return { what: conhecido, where: tipo };
+      // Sem mensagem e sem tradução: o tipo vira a frase, e a carga bruta vai
+      // para a linha de origem — em vez de o JSON inteiro virar o título do
+      // painel.
+      return { what: `O erro veio sem mensagem, do tipo ${tipo}.`, where: serializar(error) };
+    }
     return { what: serializar(error), where: 'erro sem tipo' };
   }
   return { what: String(error), where: `erro do tipo ${typeof error}` };
